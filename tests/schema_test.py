@@ -1,6 +1,7 @@
-from schema import Schema, ValidationException
-from validators import one_of
+from schema import Schema, ValidationException, SchemaFormatException
+from validators import one_of, lte, gte
 import unittest
+from datetime import datetime
 
 comment = Schema({
     "commenter":    {"type": basestring, "required": True},
@@ -18,6 +19,85 @@ blog_post = Schema({
     "category": {"type": basestring, "validates":one_of("cooking", "politics")},
     "comments": [comment]
 })
+
+class SchemaVerification(unittest.TestCase):
+
+    def assert_spec_invalid(self, spec, path):
+        with self.assertRaises(SchemaFormatException) as cm:
+            Schema(spec).verify()
+        self.assertEqual(path, cm.exception.path)
+
+
+    def test_requires_field_spec_dict(self):
+        self.assert_spec_invalid({"author": 45}, 'author')
+        
+    def test_missing_type(self):
+        self.assert_spec_invalid({"author": {}}, 'author')
+
+    def test_type_not_supported(self):
+        self.assert_spec_invalid({"author": {'type':tuple}}, 'author')
+
+    def test_supported_types(self):
+        field_types = [basestring, int, long, float, bool, datetime]
+        for field_type in field_types:
+            Schema({'some_field': {"type":field_type}}).verify()
+            
+    def test_required_should_be_a_boolean(self):
+        self.assert_spec_invalid(
+            {
+                "author": {'type':int ,'required':23}
+            }, 
+            'author')
+
+    def test_single_validation_function(self):
+        Schema({'some_field': {'type':int, "validates":one_of(['a', 'b'])}}).verify()
+
+    def test_multiple_validation_functions(self):
+        Schema({'some_field': {'type':int, "validates":[gte(1), lte(10)]}}).verify()
+
+    def test_invalid_validation(self):
+        self.assert_spec_invalid(
+            {'some_field': {'type':int, "validates":'wrong'}},
+            'some_field')      
+
+    def test_invalid_validation_in_validation_list(self):
+        self.assert_spec_invalid(
+            {'some_field': {'type':int, "validates":[gte(1), 'wrong']}},
+            'some_field')  
+
+    def test_unsupported_keys(self):
+        self.assert_spec_invalid(
+            {
+                "somefield": {"type":int, "something":"wrong"},
+                "otherfield": {"type":int}
+            }, 
+            'somefield')
+
+    def test_valid_schema_with_nesting(self):
+        blog_post.verify()
+
+    def test_unsupported_type_in_nested_schema(self):
+        self.assert_spec_invalid(
+            {
+                "content": {'type': Schema({
+                    "somefield" : {"type": tuple}
+                })}
+            },
+            'content.somefield')
+
+    def test_invalid_nested_collection_with_multiple_schemas(self):
+        self.assert_spec_invalid(
+            {
+                "items": [Schema({"somefield" : {"type": int}}), Schema({"other" : {"type": int}})]
+            },
+            'items')
+
+    def test_unsupported_type_in_nested_collection(self):
+        self.assert_spec_invalid(
+            {
+                "items": [Schema({"somefield" : {"type": tuple}})]
+            },
+            'items.somefield')
 
 
 class TestValidation(unittest.TestCase):

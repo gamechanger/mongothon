@@ -1,14 +1,81 @@
+from datetime import datetime
+from types import FunctionType
+
+def _append_path(prefix, field):
+    if prefix:
+        return "{0}.{1}".format(prefix, field)
+    else:
+        return field
+
+def _verify_schema(schema, path_prefix):
+    for field, spec in schema.doc_spec.iteritems():
+        path = _append_path(path_prefix, field)
+        
+        # Standard dict-based spec
+        if isinstance(spec, dict):
+            _verify_field_spec(spec, path)
+            
+        # An embedded collection
+        elif isinstance(spec, list):
+            if len(spec) == 0:
+                raise SchemaFormatException(
+                    "No type declared for the embedded collection at {0}",
+                    path)
+
+            if len(spec) > 1:
+                raise SchemaFormatException(
+                    "Only one type must be declared for the embedded collection at {0}",
+                    path)
+
+            if not isinstance(spec[0], Schema):
+                raise SchemaFormatException(
+                    "Embedded collection at {0} not described using a Schema object.",
+                    path)
+
+            _verify_schema(spec[0], path)
+
+        else:
+            raise SchemaFormatException("Invalid field definition for {0}", path)
+
+
+def _verify_field_spec(spec, path):
+    if not spec.has_key('type'):
+        raise SchemaFormatException("{0} has no type declared.", path)
+
+    field_type = spec['type']
+
+    if isinstance(field_type, Schema):
+        _verify_schema(field_type, path)
+        return
+
+    if field_type not in [basestring, int, float, datetime, long, bool]:
+        raise SchemaFormatException("{0} is not declared with a valid type.", path)
+
+    if spec.has_key('required') and not isinstance(spec['required'], bool):
+        raise SchemaFormatException("{0} required declaration should be True or False", path)
+        
+    if spec.has_key('validates'):
+        validates = spec['validates']
+        if not (isinstance(validates, FunctionType) or 
+                isinstance(validates, list)):
+            raise SchemaFormatException("Invalid validations for {0}", path)
+
+        elif isinstance(validates, list): 
+            for validator in validates:
+                if not isinstance(validator, FunctionType):
+                    raise SchemaFormatException("Invalid validations for {0}", path)
+
+    if not set(spec.keys()).issubset(set(['type', 'required', 'validates'])):
+        raise SchemaFormatException("Unsupported field spec item at {0}. Items: "+repr(spec.keys()), path)
+
 def _validate_instance_against_schema(instance, schema, path_prefix, errors):
     # Loop over each field in the schema and check the instance value conforms
     # to its spec
     for field, spec in schema.doc_spec.iteritems():
         value = instance.get(field, None)
 
-        if path_prefix:
-            path = "{0}.{1}".format(path_prefix, field)
-        else:
-            path = field
-
+        path = _append_path(path_prefix, field)
+        
         # Standard dict-based spec
         if isinstance(spec, dict):
             _validate_value(value, spec, path, errors)
@@ -65,6 +132,18 @@ def _validate_value(value, field_spec, path, errors):
         apply(validations)
 
 
+class SchemaFormatException(Exception):
+    def __init__(self, message, path):
+        self._message = message.format(path)
+        self._path = path
+
+    @property
+    def path(self):
+        return self._path
+
+    def __str__(self):
+        return self._message
+
 
 class ValidationException(Exception):
     def __init__(self, errors):
@@ -82,15 +161,13 @@ class Schema(object):
     def __init__(self, doc_spec):
         self._doc_spec = doc_spec
 
-
     @property
     def doc_spec(self):
         return self._doc_spec
 
-
-    def _verify_spec(self):
+    def verify(self):
         """Verifies that the given schema document spec is valid."""
-        _verify_schema_validity(self, None)
+        _verify_schema(self, None)
 
     def apply_defaults(self, instance):
         """Applies default values to the given document"""
