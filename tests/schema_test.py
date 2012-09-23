@@ -3,30 +3,37 @@ from validators import one_of, lte, gte
 import unittest
 from datetime import datetime
 
+def stubnow():
+    return datetime(2012, 4, 5)
+
+# TEST SCHEMAS
 comment = Schema({
     "commenter":    {"type": basestring, "required": True},
     "email":        {"type": basestring, "required": False},
     "comment":      {"type": basestring, "required": True},
+    "votes":        {"type": int, "default": 0}
 })
-
 
 blog_post = Schema({
     "author":   {"type": basestring, "required": True},
     "content":  {"type": Schema({
         "title":        {"type": basestring, "required": True},
         "text":         {"type": basestring, "required": True},
+        "page_views":   {"type": int, "default": 1}
     }), "required": True},
     "category": {"type": basestring, "validates":one_of("cooking", "politics")},
-    "comments": [comment]
+    "comments": [comment],
+    "likes":        {"type": int, "default": 0},
+    "creation_date": {"type": datetime, "default": stubnow}
 })
 
-class SchemaVerification(unittest.TestCase):
+
+class TestSchemaVerificationTest(unittest.TestCase):
 
     def assert_spec_invalid(self, spec, path):
         with self.assertRaises(SchemaFormatException) as cm:
             Schema(spec).verify()
         self.assertEqual(path, cm.exception.path)
-
 
     def test_requires_field_spec_dict(self):
         self.assert_spec_invalid({"author": 45}, 'author')
@@ -73,6 +80,21 @@ class SchemaVerification(unittest.TestCase):
             }, 
             'somefield')
 
+    def test_default_value_of_correct_type(self):
+        Schema({'num_wheels':{'type':int, 'default':4}}).verify()
+
+    def test_default_value_of_incorrect_type(self):
+        self.assert_spec_invalid(
+            {'num_wheels':{'type':int, 'default':'wrong'}},
+            'num_wheels')
+
+    def test_default_value_accepts_function(self):
+        def default_fn():
+            return 4
+
+        Schema({'num_wheels':{'type':int, 'default':default_fn}}).verify()
+
+
     def test_valid_schema_with_nesting(self):
         blog_post.verify()
 
@@ -99,6 +121,14 @@ class SchemaVerification(unittest.TestCase):
             },
             'items.somefield')
 
+    def test_nested_schema_cannot_have_default(self):
+        self.assert_spec_invalid(
+            {
+                "content": {'type': Schema({
+                    "somefield" : {"type": int}
+                }), "default": {}}
+            },
+            'content')
 
 class TestValidation(unittest.TestCase):
     def setUp(self):
@@ -163,4 +193,48 @@ class TestValidation(unittest.TestCase):
         self.assert_document_paths_invalid(self.document, ['category'])
 
 
+class TestDefaultApplication(unittest.TestCase):
+    def setUp(self):
+        self.document = {
+            "author": "John Humphreys",
+            "content": {
+                "title": "How to make cookies",
+                "text": "First start by pre-heating the oven..."
+            },
+            "category": "cooking",
+            "comments": [
+                {
+                    "commenter": "Julio Cesar",
+                    "email": "jcesar@test.com",
+                    "comment": "Great post dude!"
+                },
+                {
+                    "commenter": "Michael Andrews",
+                    "comment": "My wife loves these."
+                }
+            ]
+        }
+
+    def test_apply_default_function(self):
+        blog_post.apply_defaults(self.document)
+        self.assertEqual(stubnow(), self.document['creation_date'])
         
+    def test_apply_default_value(self):
+        blog_post.apply_defaults(self.document)
+        self.assertEqual(0, self.document['likes'])
+
+    def test_apply_default_value_in_nested_document(self):
+        blog_post.apply_defaults(self.document)
+        self.assertEqual(1, self.document['content']['page_views'])
+
+    def test_apply_default_value_in_nested_collection(self):
+        blog_post.apply_defaults(self.document)
+        self.assertEqual(0, self.document['comments'][0]['votes'])
+        self.assertEqual(0, self.document['comments'][1]['votes'])
+
+    def test_default_value_does_not_overwrite_existing(self):
+        self.document['likes'] = 35
+        self.document['creation_date'] = datetime(1980, 5, 3)
+        blog_post.apply_defaults(self.document)
+        self.assertEqual(35, self.document['likes'])
+        self.assertEqual(datetime(1980, 5, 3), self.document['creation_date'])

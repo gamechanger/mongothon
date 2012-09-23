@@ -39,21 +39,31 @@ def _verify_schema(schema, path_prefix):
 
 
 def _verify_field_spec(spec, path):
+    # Required should be a boolean
+    if spec.has_key('required') and not isinstance(spec['required'], bool):
+        raise SchemaFormatException("{0} required declaration should be True or False", path)
+
+    # Must have a type specified
     if not spec.has_key('type'):
         raise SchemaFormatException("{0} has no type declared.", path)
 
     field_type = spec['type']
 
     if isinstance(field_type, Schema):
+        # Nested documents cannot have defaults or validation
+        if not set(spec.keys()).issubset(set(['type', 'required'])):
+            raise SchemaFormatException("Unsupported field spec item at {0}. Items: "+repr(spec.keys()), path)
+        
+        # Recurse into nested Schema
         _verify_schema(field_type, path)
         return
 
+    # Must be one of the supported types
     if field_type not in [basestring, int, float, datetime, long, bool]:
         raise SchemaFormatException("{0} is not declared with a valid type.", path)
 
-    if spec.has_key('required') and not isinstance(spec['required'], bool):
-        raise SchemaFormatException("{0} required declaration should be True or False", path)
-        
+    
+    # Validations should be either a single function or array of functions
     if spec.has_key('validates'):
         validates = spec['validates']
         if not (isinstance(validates, FunctionType) or 
@@ -65,8 +75,14 @@ def _verify_field_spec(spec, path):
                 if not isinstance(validator, FunctionType):
                     raise SchemaFormatException("Invalid validations for {0}", path)
 
-    if not set(spec.keys()).issubset(set(['type', 'required', 'validates'])):
+    # Defaults must be of the correct type or a function
+    if spec.has_key('default') and not (isinstance(spec['default'], field_type) or isinstance(spec['default'], FunctionType)):
+        raise SchemaFormatException("Default value for {0} is not of the nominated type.", path)
+
+    # Only expected spec keys are supported
+    if not set(spec.keys()).issubset(set(['type', 'required', 'validates', 'default'])):
         raise SchemaFormatException("Unsupported field spec item at {0}. Items: "+repr(spec.keys()), path)
+
 
 def _validate_instance_against_schema(instance, schema, path_prefix, errors):
     # Loop over each field in the schema and check the instance value conforms
@@ -132,6 +148,34 @@ def _validate_value(value, field_spec, path, errors):
         apply(validations)
 
 
+def _apply_schema_defaults(schema, instance):
+    for field, spec in schema.doc_spec.iteritems():
+
+        if instance.has_key(field):
+            value = instance[field]
+
+            # recurse into nested collections
+            if isinstance(spec, list) and isinstance(value, list):
+                for item in value:
+                    _apply_schema_defaults(spec[0], item)
+
+            # recurse into nested docs
+            elif isinstance(spec['type'], Schema) and isinstance(value, dict):
+                _apply_schema_defaults(spec['type'], value)
+
+            # Bailout as we don't want to apply a default
+            continue
+
+        # Apply a default if one is available
+        if spec.has_key('default'):
+            default = spec['default']
+            if (isinstance(default, FunctionType)):
+                instance[field] = default()
+            else:
+                instance[field] = default
+
+
+
 class SchemaFormatException(Exception):
     def __init__(self, message, path):
         self._message = message.format(path)
@@ -171,7 +215,7 @@ class Schema(object):
 
     def apply_defaults(self, instance):
         """Applies default values to the given document"""
-        #for (field, spec) in 
+        _apply_schema_defaults(self, instance)
 
     def validate(self, instance):
         """Validates the given document against this schema. Raises a 
