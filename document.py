@@ -8,7 +8,7 @@ class Document(dict):
             for key, value in initial.iteritems():
                 # All document keys must be strings containing valid javascript identifier
                 if not valid_key.match(key):
-                    raise Exception('Invalid document') # TODO make this nicer
+                    raise ValueError("Document property {0} is improperly named.".format(key)) 
 
                 if isinstance(value, dict):
                     self[key] = Document(value)
