@@ -1,6 +1,8 @@
 from datetime import datetime
 from types import FunctionType
 
+SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool]
+
 def _append_path(prefix, field):
     if prefix:
         return "{0}.{1}".format(prefix, field)
@@ -17,22 +19,22 @@ def _verify_schema(schema, path_prefix):
             
         # An embedded collection
         elif isinstance(spec, list):
-            if len(spec) == 0:
+            if len(spec) == 0 or len(spec) > 1:
                 raise SchemaFormatException(
-                    "No type declared for the embedded collection at {0}",
+                    "Exactly one type must be declared for the embedded collection at {0}",
                     path)
 
-            if len(spec) > 1:
-                raise SchemaFormatException(
-                    "Only one type must be declared for the embedded collection at {0}",
-                    path)
-
-            if not isinstance(spec[0], Schema):
+            # If the list type is a schema, recurse into it
+            if isinstance(spec[0], Schema):
+                _verify_schema(spec[0], path)
+                continue
+                
+            # Otherwise just make sure it's supported
+            if spec[0] not in SUPPORTED_TYPES:
                 raise SchemaFormatException(
                     "Embedded collection at {0} not described using a Schema object.",
                     path)
 
-            _verify_schema(spec[0], path)
 
         else:
             raise SchemaFormatException("Invalid field definition for {0}", path)
@@ -59,7 +61,7 @@ def _verify_field_spec(spec, path):
         return
 
     # Must be one of the supported types
-    if field_type not in [basestring, int, float, datetime, long, bool]:
+    if field_type not in SUPPORTED_TYPES:
         raise SchemaFormatException("{0} is not declared with a valid type.", path)
 
     
@@ -85,6 +87,10 @@ def _verify_field_spec(spec, path):
 
 
 def _validate_instance_against_schema(instance, schema, path_prefix, errors):
+    if not isinstance(instance, dict):
+        errors[path_prefix] = "Expected instance of dict to validate against schema."
+        return
+
     # Loop over each field in the schema and check the instance value conforms
     # to its spec
     for field, spec in schema.doc_spec.iteritems():
@@ -105,7 +111,11 @@ def _validate_instance_against_schema(instance, schema, path_prefix, errors):
                 else:
                     for i, item in enumerate(value):
                         instance_path = "{0}.{1}".format(path, i)
-                        _validate_instance_against_schema(item, spec[0], instance_path, errors)
+
+                        if isinstance(spec[0], Schema):
+                            _validate_instance_against_schema(item, spec[0], instance_path, errors)
+                        elif not isinstance(item, spec[0]):
+                            errors[instance_path] = "List item is of incorrect type"
 
 
 def _validate_value(value, field_spec, path, errors):
@@ -155,7 +165,7 @@ def _apply_schema_defaults(schema, instance):
             value = instance[field]
 
             # recurse into nested collections
-            if isinstance(spec, list) and isinstance(value, list):
+            if isinstance(spec, list) and isinstance(value, list) and isinstance(spec[0], Schema):
                 for item in value:
                     _apply_schema_defaults(spec[0], item)
 
@@ -167,7 +177,7 @@ def _apply_schema_defaults(schema, instance):
             continue
 
         # Apply a default if one is available
-        if spec.has_key('default'):
+        if isinstance(spec, dict) and spec.has_key('default'):
             default = spec['default']
             if (isinstance(default, FunctionType)):
                 instance[field] = default()

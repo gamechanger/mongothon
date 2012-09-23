@@ -24,7 +24,8 @@ blog_post = Schema({
     "category": {"type": basestring, "validates":one_of("cooking", "politics")},
     "comments": [comment],
     "likes":        {"type": int, "default": 0},
-    "creation_date": {"type": datetime, "default": stubnow}
+    "creation_date": {"type": datetime, "default": stubnow},
+    "tags":     [basestring]
 })
 
 
@@ -130,6 +131,11 @@ class TestSchemaVerificationTest(unittest.TestCase):
             },
             'content')
 
+    def test_nested_collection_of_ints(self):
+        Schema({
+            "numbers": [int]
+        }).verify()  
+
 class TestValidation(unittest.TestCase):
     def setUp(self):
         self.document = {
@@ -149,7 +155,8 @@ class TestValidation(unittest.TestCase):
                     "commenter": "Michael Andrews",
                     "comment": "My wife loves these."
                 }
-            ]
+            ],
+            "tags": ["cookies", "recipe", "yum"]
         }
 
     def assert_document_paths_invalid(self, document, paths):
@@ -187,6 +194,10 @@ class TestValidation(unittest.TestCase):
         self.assert_document_paths_invalid(
             self.document, 
             ['content.title', 'comments.1.commenter', 'author'])
+
+    def test_embedded_collection_item_of_incorrect_type(self):
+        self.document['tags'].append(55)
+        self.assert_document_paths_invalid(self.document, ['tags.3'])
 
     def test_validation_failure(self):
         self.document['category'] = 'gardening' #invalid category
