@@ -21,7 +21,8 @@ class TestDocument(unittest.TestCase):
                     "commenter": "Michael Andrews",
                     "comment": "My wife loves these."
                 }
-            ]
+            ],
+            "tags": ["recipe", "cookies"]
         }
 
         return Document(spec)
@@ -35,7 +36,13 @@ class TestDocument(unittest.TestCase):
         self.assertIsInstance(document['content'], Document)
         self.assertIsInstance(document['comments'][0], Document)
 
-    def test_provides_attribute_accessors(self):
+    def test_provides_attribute_getters(self):
         document = self._get_document()
         self.assertEqual("cooking", document.category)
         self.assertEqual("Julio Cesar", document.comments[0].commenter)
+
+    def test_provides_attribute_setters(self):
+        document = self._get_document()
+        document.category = "baking"
+        self.assertEqual("baking", document['category'])
+        

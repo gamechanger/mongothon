@@ -2,17 +2,29 @@ from validators import one_of, gte, lte
 import unittest
 
 class TestOneOf(unittest.TestCase):
-    def setUp(self):
-        self.validator = one_of('peas', 'carrots')
-
+    
     def test_valid(self):
+        self.validator = one_of('peas', 'carrots')
         self.assertIsNone(self.validator('peas'))
         self.assertIsNone(self.validator('carrots'))
         
     def test_invalid(self):
+        self.validator = one_of('peas', 'carrots')
         self.assertEqual(
             "'sweetcorn' is not in the list ('peas', 'carrots')", 
             self.validator('sweetcorn'))
+
+    def test_valid_array(self):
+        self.validator = one_of(['peas', 'carrots'])
+        self.assertIsNone(self.validator('peas'))
+        self.assertIsNone(self.validator('carrots'))
+        
+    def test_invalid_array(self):
+        self.validator = one_of(['peas', 'carrots'])
+        self.assertEqual(
+            "'sweetcorn' is not in the list ('peas', 'carrots')", 
+            self.validator('sweetcorn'))
+
 
 class TestGte(unittest.TestCase):
     def setUp(self):

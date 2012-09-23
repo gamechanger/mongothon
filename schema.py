@@ -86,7 +86,7 @@ def _verify_field_spec(spec, path):
         raise SchemaFormatException("Unsupported field spec item at {0}. Items: "+repr(spec.keys()), path)
 
 
-def _validate_instance_against_schema(instance, schema, path_prefix, errors):
+def _validate_instance_against_schema(instance, schema, errors, path_prefix=''):
     if not isinstance(instance, dict):
         errors[path_prefix] = "Expected instance of dict to validate against schema."
         return
@@ -113,7 +113,7 @@ def _validate_instance_against_schema(instance, schema, path_prefix, errors):
                         instance_path = "{0}.{1}".format(path, i)
 
                         if isinstance(spec[0], Schema):
-                            _validate_instance_against_schema(item, spec[0], instance_path, errors)
+                            _validate_instance_against_schema(item, spec[0], errors, instance_path)
                         elif not isinstance(item, spec[0]):
                             errors[instance_path] = "List item is of incorrect type"
 
@@ -132,7 +132,7 @@ def _validate_value(value, field_spec, path, errors):
     # If our field is an embedded document, recurse into it
     if isinstance(field_type, Schema):
         if isinstance(value, dict):
-            _validate_instance_against_schema(value, field_type, path, errors)
+            _validate_instance_against_schema(value, field_type, errors, path)
         else:
             errors[path] = "%s should be an embedded document" % path
         return
@@ -161,14 +161,16 @@ def _validate_value(value, field_spec, path, errors):
 def _apply_schema_defaults(schema, instance):
     for field, spec in schema.doc_spec.iteritems():
 
+        # Determine if a value already exists for the field
         if instance.has_key(field):
             value = instance[field]
 
             # recurse into nested collections
-            if isinstance(spec, list) and isinstance(value, list) and isinstance(spec[0], Schema):
-                for item in value:
-                    _apply_schema_defaults(spec[0], item)
-
+            if isinstance(spec, list):
+                if isinstance(value, list) and isinstance(spec[0], Schema):
+                    for item in value:
+                        _apply_schema_defaults(spec[0], item)
+              
             # recurse into nested docs
             elif isinstance(spec['type'], Schema) and isinstance(value, dict):
                 _apply_schema_defaults(spec['type'], value)
@@ -231,7 +233,7 @@ class Schema(object):
         """Validates the given document against this schema. Raises a 
         ValidationException if there are any failures."""
         errors = {}
-        _validate_instance_against_schema(instance, self, None, errors)
+        _validate_instance_against_schema(instance, self, errors)
 
         if len(errors) > 0:
             raise ValidationException(errors)

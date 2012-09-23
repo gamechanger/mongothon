@@ -1,8 +1,13 @@
 def one_of(*args):
+    if len(args) == 1 and isinstance(args[0], list):
+        items = tuple(args[0])
+    else:
+        items = args
+
     """Validates that the field value is in the given list."""
     def validate(value):
-        if not value in args:
-            return "'{0}' is not in the list {1}".format(value, args)
+        if not value in items:
+            return "'{0}' is not in the list {1}".format(value, items)
     return validate
 
 
