@@ -62,6 +62,15 @@ class FakeCursor(object):
     def __getitem__(self, index):
         return self._contents[index]
 
+    def __getattr__(self, name):
+        def return_self(*args, **kwargs):
+            return self
+
+        if name in ['rewind', 'clone', 'add_option', 'remove_option',
+                    'limit', 'batch_size', 'skip', 'max_scan', 'sort',
+                    'hint', 'where']:
+            return return_self
+
     def __iter__(self):
         return self
 
@@ -97,7 +106,8 @@ class TestModel(unittest.TestCase):
         self.car.validate()
 
     def test_validation_respects_defaults(self):
-        del self.car.trim['doors'] # this would cause validation to fail without a default being applied
+        # this would cause validation to fail without a default being applied
+        del self.car.trim['doors']
         self.car.validate()
 
     def test_validation_does_not_apply_defaults_to_instance(self):
@@ -138,8 +148,8 @@ class TestModel(unittest.TestCase):
         self.mock_collection.insert.assert_called_with(doc)
 
     def test_update(self):
-        self.Car.update({'make':'Peugeot'}, {'model':'106'}, upsert=True)
-        self.mock_collection.update.assert_called_with({'make':'Peugeot'}, {'model':'106'}, upsert=True)
+        self.Car.update({'make': 'Peugeot'}, {'model': '106'}, upsert=True)
+        self.mock_collection.update.assert_called_with({'make': 'Peugeot'}, {'model': '106'}, upsert=True)
 
     def test_count(self):
         self.mock_collection.count.return_value = 45
@@ -147,26 +157,62 @@ class TestModel(unittest.TestCase):
 
     def test_find_one(self):
         self.mock_collection.find_one.return_value = doc
-        loaded_car = self.Car.find_one({'make':'Peugeot'})
+        loaded_car = self.Car.find_one({'make': 'Peugeot'})
         self.assertEquals(doc, loaded_car)
-        self.mock_collection.find_one.assert_called_with({'make':'Peugeot'})
+        self.mock_collection.find_one.assert_called_with({'make': 'Peugeot'})
 
     def test_find(self):
-        cursor = FakeCursor([{'make':'Peugeot', 'model':'405'},{'make':'Peugeot', 'model':'205'}])
+        cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
         self.mock_collection.find.return_value = cursor
-        cars = self.Car.find({'make':'Peugeot'}, limit=2)
+        cars = self.Car.find({'make': 'Peugeot'}, limit=2)
         self.assertIsInstance(cars[0], self.Car)
         self.assertEqual(2, cars.count())
         for car in cars:
             self.assertIsInstance(car, self.Car)
-    
+
     def test_find_by_id(self):
         self.mock_collection.find_one.return_value = doc
         oid = ObjectId()
         loaded_car = self.Car.find_by_id(str(oid))
         self.assertEquals(doc, loaded_car)
-        self.mock_collection.find_one.assert_called_with({'_id':oid})
+        self.mock_collection.find_one.assert_called_with({'_id': oid})
 
+    def assert_returns_wrapped_cursor(self, attr_name):
+        cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
+        self.mock_collection.find.return_value = cursor
+        cars = getattr(self.Car.find({'make': 'Peugeot'}), attr_name)()
+        self.assertIsInstance(cars[0], self.Car)
 
+    def test_limit_cursor(self):
+        self.assert_returns_wrapped_cursor('limit')
 
+    def test_rewind_cursor(self):
+        self.assert_returns_wrapped_cursor('rewind')
+
+    def test_clone_cursor(self):
+        self.assert_returns_wrapped_cursor('clone')
+
+    def test_add_option_cursor(self):
+        self.assert_returns_wrapped_cursor('add_option')
+
+    def test_remove_option_cursor(self):
+        self.assert_returns_wrapped_cursor('remove_option')
+
+    def test_batch_size_cursor(self):
+        self.assert_returns_wrapped_cursor('batch_size')
+
+    def test_skip_cursor(self):
+        self.assert_returns_wrapped_cursor('skip')
+
+    def test_max_scan_cursor(self):
+        self.assert_returns_wrapped_cursor('max_scan')
+
+    def test_sort_cursor(self):
+        self.assert_returns_wrapped_cursor('sort')
+
+    def test_hint_cursor(self):
+        self.assert_returns_wrapped_cursor('hint')
+
+    def test_where_cursor(self):
+        self.assert_returns_wrapped_cursor('where')
 

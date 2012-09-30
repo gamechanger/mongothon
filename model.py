@@ -66,8 +66,11 @@ def create(schema, collection):
         def find_by_id(cls, id):
             return cls.find_one(cls._id_spec(id))
 
-
     class CursorWrapper(object):
+        RETURNS_CURSOR = ['rewind', 'clone', 'add_option', 'remove_option',
+                          'limit', 'batch_size', 'skip', 'max_scan', 'sort',
+                          'hint', 'where']
+
         def __init__(self, wrapped_cursor):
             self._wrapped = wrapped_cursor
 
@@ -75,8 +78,12 @@ def create(schema, collection):
             return Model(self._wrapped[index])
 
         def __getattr__(self, name):
-            return getattr(self._wrapped, name)
+            attr = getattr(self._wrapped, name)
+            if name in self.RETURNS_CURSOR:
+                def attr_wrapper(*args, **kwargs):
+                    return CursorWrapper(attr(*args, **kwargs))
 
+                return attr_wrapper
+            return attr
 
     return Model
-
