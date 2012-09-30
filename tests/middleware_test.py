@@ -47,5 +47,13 @@ class TestMiddlewareRegistrar(unittest.TestCase):
     def test_handles_events_with_no_registered_middleware(self):
         self.registrar.apply('save', {})
 
+    def test_double_registered_middleware_called_only_once(self):
+        middleware = Mock()
+        document = Mock()
+        self.registrar.register('save', middleware)
+        self.registrar.register('save', middleware)
 
-        
+        self.registrar.apply('save', document)
+
+        middleware.assert_called_once_with(document)
+

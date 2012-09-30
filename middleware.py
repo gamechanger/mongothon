@@ -16,7 +16,8 @@ class MiddlewareRegistrar(object):
 
         # TODO: Can we check the method signature?
         self._middleware_dict.setdefault(event, [])
-        self._middleware_dict[event].append(fn)
+        if fn not in self._middleware_dict[event]:
+            self._middleware_dict[event].append(fn)
 
     def apply(self, event, document):
         """Applies all middleware functions registered against the given
