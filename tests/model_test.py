@@ -1,6 +1,6 @@
 from model import create
 import unittest
-from mock import Mock, ANY
+from mock import Mock, ANY, call
 from document import Document
 from schema import Schema
 from validators import one_of
@@ -215,4 +215,43 @@ class TestModel(unittest.TestCase):
 
     def test_where_cursor(self):
         self.assert_returns_wrapped_cursor('where')
+
+    def call_tracker(self, **kwargs):
+        tracker = Mock()
+        for key, value in kwargs.iteritems():
+            setattr(tracker, key, value)
+        return tracker
+
+    def test_before_save_middleware(self):
+        middleware = Mock()
+        tracker = self.call_tracker(middleware=middleware, collection=self.mock_collection)
+        self.Car.before_save(middleware)
+        self.car.save()
+        self.assertEquals([call.middleware(self.car), call.collection.save(self.car)], tracker.mock_calls)
+
+    def test_after_save_middleware(self):
+        middleware = Mock()
+        tracker = self.call_tracker(middleware=middleware, collection=self.mock_collection)
+        self.Car.after_save(middleware)
+        self.car.save()
+        self.assertEquals([call.collection.save(self.car), call.middleware(self.car)], tracker.mock_calls)
+
+    def test_before_validate_middleware(self):
+        middleware = Mock()
+        car_schema.validate = Mock()
+        tracker = self.call_tracker(middleware=middleware, validate=car_schema.validate)
+        self.Car.before_validate(middleware)
+        self.car.validate()
+        self.assertEquals([call.middleware(self.car), call.validate(self.car)], tracker.mock_calls)
+
+    def test_after_validate_middleware(self):
+        middleware = Mock()
+        car_schema.validate = Mock()
+        tracker = self.call_tracker(middleware=middleware, validate=car_schema.validate)
+        self.Car.after_validate(middleware)
+        self.car.validate()
+        self.assertEquals([call.validate(self.car), call.middleware(self.car)], tracker.mock_calls)
+
+
+
 
