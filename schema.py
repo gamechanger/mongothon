@@ -10,7 +10,7 @@ def _append_path(prefix, field):
     else:
         return field
 
-def _verify_schema(schema, path_prefix):
+def _verify_schema(schema, path_prefix=None):
     for field, spec in schema.doc_spec.iteritems():
         path = _append_path(path_prefix, field)
         
@@ -267,7 +267,7 @@ class Schema(object):
 
     def verify(self):
         """Verifies that the given schema document spec is valid."""
-        _verify_schema(self, None)
+        _verify_schema(self)
 
     def apply_defaults(self, instance):
         """Applies default values to the given document"""
