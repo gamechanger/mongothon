@@ -276,4 +276,50 @@ class TestVirtualFieldDefinition(unittest.TestCase):
         self.assertTrue(name.virtuals['full_name'].has_getter())
         self.assertEqual("John Smith", name.virtuals['full_name'].on_get(doc))
 
-        
+    def test_virtual_setter(self):
+        def full_name_setter(value, doc):
+            doc['first'] = value.split(' ')[0]
+            doc['last'] = value.split(' ')[1]
+        name.virtual("full_name").set(full_name_setter)
+        doc = {"first": "John", "last": "Smith"}
+        self.assertTrue(name.virtuals['full_name'].has_setter())
+        name.virtuals['full_name'].on_set("Bob Jones", doc)
+        self.assertEqual("Bob", doc['first'])
+        self.assertEqual("Jones", doc['last'])
+
+    def test_setter_redefinition(self):
+        def backward_setter(value, doc):
+            doc['last'] = value.split(' ')[0]
+            doc['first'] = value.split(' ')[1]       
+
+        def full_name_setter(value, doc):
+            doc['first'] = value.split(' ')[0]
+            doc['last'] = value.split(' ')[1]
+
+        name.virtual("full_name").set(backward_setter)
+        name.virtual("full_name").set(full_name_setter)
+        doc = {"first": "John", "last": "Smith"}
+        name.virtuals['full_name'].on_set("Bob Jones", doc)
+        self.assertEqual("Bob", doc['first'])
+        self.assertEqual("Jones", doc['last'])
+
+    def test_detects_invalid_getter_signature(self):
+        def getter_no_args():
+            pass
+
+        def getter_two_args(romy, michelle):
+            pass
+
+        self.assertRaises(ValueError, name.virtual("thing").get, getter_no_args)
+        self.assertRaises(ValueError, name.virtual("thing").get, getter_two_args)
+
+    def test_detects_invalid_setter_signature(self):
+        def setter_one_arg(maverick):
+            pass
+
+        def setter_three_args(good, bad, ugly):
+            pass
+
+        self.assertRaises(ValueError, name.virtual("thing").set, setter_one_arg)
+        self.assertRaises(ValueError, name.virtual("thing").set, setter_three_args)
+

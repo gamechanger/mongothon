@@ -1,5 +1,6 @@
 from datetime import datetime
 from types import FunctionType
+from inspect import getargspec
 
 SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool]
 
@@ -222,15 +223,37 @@ class VirtualField(object):
         function should expect to receive a document structure which matches the
         enclosing schema and should return the value of the virtual field
         derived from this document."""
+        (args, varargs, keywords, defaults) = getargspec(fn)
+        if len(args) != 1:
+            raise ValueError('Virtual field getters take 1 argument only')
+
         self._getter = fn
+
+    def set(self, fn):
+        """Register a setter function with this virtual field. The setter 
+        should expect to be passed the value being set and the document to 
+        which it suould be applied."""
+        (args, varargs, keywords, defaults) = getargspec(fn)
+        if len(args) != 2:
+            raise ValueError('Virtual field getters take 2 arguments only')
+
+        self._setter = fn
 
     def has_getter(self):
         return self._getter != None
+
+    def has_setter(self):
+        return self._setter != None
 
     def on_get(self, doc):
         """Applies the registered getter function to the given document using 
         the and return the calculated value."""
         return self._getter(doc)
+
+    def on_set(self, value, doc):
+        """Applies the given value to the given document using the registered
+        setter."""
+        return self._setter(value, doc)
 
 
 class Schema(object):
