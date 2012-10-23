@@ -78,6 +78,18 @@ class TestSchemaVerificationTest(unittest.TestCase):
             {'some_field': {'type':int, "validates":[gte(1), 'wrong']}},
             'some_field')  
 
+    def test_incorrect_validator_arg_spec(self):
+        def bad_validator():
+            pass
+
+        self.assert_spec_invalid(
+            {'some_field': {'type':int, "validates":bad_validator}},
+            'some_field')
+
+        self.assert_spec_invalid(
+            {'some_field': {'type':int, "validates":[bad_validator, gte(1)]}},
+            'some_field')
+
     def test_unsupported_keys(self):
         self.assert_spec_invalid(
             {

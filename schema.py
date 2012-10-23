@@ -43,11 +43,11 @@ def _verify_schema(schema, path_prefix=None):
 
 def _verify_field_spec(spec, path):
     # Required should be a boolean
-    if spec.has_key('required') and not isinstance(spec['required'], bool):
+    if 'required' in spec and not isinstance(spec['required'], bool):
         raise SchemaFormatException("{0} required declaration should be True or False", path)
 
     # Must have a type specified
-    if not spec.has_key('type'):
+    if 'type' not in spec:
         raise SchemaFormatException("{0} has no type declared.", path)
 
     field_type = spec['type']
@@ -67,25 +67,33 @@ def _verify_field_spec(spec, path):
 
     
     # Validations should be either a single function or array of functions
-    if spec.has_key('validates'):
+    if 'validates' in spec:
         validates = spec['validates']
-        if not (isinstance(validates, FunctionType) or 
-                isinstance(validates, list)):
-            raise SchemaFormatException("Invalid validations for {0}", path)
 
-        elif isinstance(validates, list): 
+        if isinstance(validates, list): 
             for validator in validates:
-                if not isinstance(validator, FunctionType):
-                    raise SchemaFormatException("Invalid validations for {0}", path)
+                _verify_validator(validator, path)
+        else:
+            _verify_validator(validates, path)
 
     # Defaults must be of the correct type or a function
-    if spec.has_key('default') and not (isinstance(spec['default'], field_type) or isinstance(spec['default'], FunctionType)):
+    if 'default' in spec and not (isinstance(spec['default'], field_type) or isinstance(spec['default'], FunctionType)):
         raise SchemaFormatException("Default value for {0} is not of the nominated type.", path)
 
     # Only expected spec keys are supported
     if not set(spec.keys()).issubset(set(['type', 'required', 'validates', 'default'])):
         raise SchemaFormatException("Unsupported field spec item at {0}. Items: "+repr(spec.keys()), path)
 
+
+def _verify_validator(validator, path):
+    # Validator should be a function
+    if not isinstance(validator, FunctionType):
+        raise SchemaFormatException("Invalid validations for {0}", path)
+
+    # Validator should accept a single argument
+    (args, varargs, keywords, defaults) = getargspec(validator)
+    if len(args) != 1:
+        raise SchemaFormatException("Invalid validations for {0}", path)
 
 def _validate_instance_against_schema(instance, schema, errors, path_prefix=''):
     if not isinstance(instance, dict):
@@ -163,7 +171,7 @@ def _apply_schema_defaults(schema, instance):
     for field, spec in schema.doc_spec.iteritems():
 
         # Determine if a value already exists for the field
-        if instance.has_key(field):
+        if field in instance:
             value = instance[field]
 
             # recurse into nested collections
@@ -180,7 +188,7 @@ def _apply_schema_defaults(schema, instance):
             continue
 
         # Apply a default if one is available
-        if isinstance(spec, dict) and spec.has_key('default'):
+        if isinstance(spec, dict) and 'default' in spec:
             default = spec['default']
             if (isinstance(default, FunctionType)):
                 instance[field] = default()
