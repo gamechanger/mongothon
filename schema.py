@@ -213,9 +213,30 @@ class ValidationException(Exception):
         return repr(self._errors)
 
 
+class VirtualField(object):
+    """Encapsulates a named virtual field associated with a Schema,
+    with methods to register and apply getters and setters."""
+
+    def get(self, fn):
+        """Registers a getter function with this virtual field. The getter 
+        function should expect to receive a document structure which matches the
+        enclosing schema and should return the value of the virtual field
+        derived from this document."""
+        self._getter = fn
+
+    def has_getter(self):
+        return self._getter != None
+
+    def on_get(self, doc):
+        """Applies the registered getter function to the given document using 
+        the and return the calculated value."""
+        return self._getter(doc)
+
+
 class Schema(object):
     def __init__(self, doc_spec):
         self._doc_spec = doc_spec
+        self._virtuals = {}
 
     @property
     def doc_spec(self):
@@ -238,4 +259,12 @@ class Schema(object):
         if len(errors) > 0:
             raise ValidationException(errors)
 
+    def virtual(self, field_name):
+        """Allows a virtual field definition to be provided."""
+        if not field_name in self._virtuals:
+            self._virtuals[field_name] = VirtualField()
+        return self._virtuals[field_name]
 
+    @property
+    def virtuals(self):
+        return self._virtuals

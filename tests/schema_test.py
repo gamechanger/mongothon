@@ -14,8 +14,13 @@ comment = Schema({
     "votes":        {"type": int, "default": 0}
 })
 
+name = Schema({
+    "first":    {"type": basestring, "required": True},
+    "last":     {"type": basestring, "required": True}
+})
+
 blog_post = Schema({
-    "author":   {"type": basestring, "required": True},
+    "author":   {"type": name, "required": True},
     "content":  {"type": Schema({
         "title":        {"type": basestring, "required": True},
         "text":         {"type": basestring, "required": True},
@@ -139,7 +144,10 @@ class TestSchemaVerificationTest(unittest.TestCase):
 class TestValidation(unittest.TestCase):
     def setUp(self):
         self.document = {
-            "author": "John Humphreys",
+            "author": {
+                "first":    "John",
+                "last":     "Humphreys"
+            },
             "content": {
                 "title": "How to make cookies",
                 "text": "First start by pre-heating the oven..."
@@ -207,7 +215,10 @@ class TestValidation(unittest.TestCase):
 class TestDefaultApplication(unittest.TestCase):
     def setUp(self):
         self.document = {
-            "author": "John Humphreys",
+            "author": {
+                "first":    "John",
+                "last":     "Humphreys"
+            },
             "content": {
                 "title": "How to make cookies",
                 "text": "First start by pre-heating the oven..."
@@ -249,3 +260,20 @@ class TestDefaultApplication(unittest.TestCase):
         blog_post.apply_defaults(self.document)
         self.assertEqual(35, self.document['likes'])
         self.assertEqual(datetime(1980, 5, 3), self.document['creation_date'])
+
+
+class TestVirtualFieldDefinition(unittest.TestCase):
+    def test_virtual_getter(self):
+        name.virtual("full_name").get(lambda doc: "%s %s" % (doc['first'], doc['last']))
+        doc = {"first": "John", "last": "Smith"}
+        self.assertTrue(name.virtuals['full_name'].has_getter())
+        self.assertEqual("John Smith", name.virtuals['full_name'].on_get(doc))
+
+    def test_field_getter_redefinition(self):
+        name.virtual("full_name").get(lambda doc: "%s %s" % (doc['last'], doc['first']))
+        name.virtual("full_name").get(lambda doc: "%s %s" % (doc['first'], doc['last']))
+        doc = {"first": "John", "last": "Smith"}
+        self.assertTrue(name.virtuals['full_name'].has_getter())
+        self.assertEqual("John Smith", name.virtuals['full_name'].on_get(doc))
+
+        
