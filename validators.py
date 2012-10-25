@@ -46,3 +46,12 @@ def between(min_value, max_value):
         if value > max_value:
             return "{0} is greater than the maximum value of {1}".format(value, max_value)
     return validate
+
+
+def length(min=None, max=None):
+    def validate(value):
+        if min and len(value) < min:
+            return "String must be at least {0} characters in length".format(min)
+        if max and len(value) > max:
+            return "String must be at most {0} characters in length".format(max)
+    return validate

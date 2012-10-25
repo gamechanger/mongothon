@@ -1,4 +1,4 @@
-from validators import one_of, gte, lte, gt, lt, between
+from validators import one_of, gte, lte, gt, lt, between, length
 import unittest
 
 
@@ -97,3 +97,22 @@ class TestLt(unittest.TestCase):
         self.assertEqual(
             "Value must be less than 3", 
             self.validator(3))
+
+class TestLen(unittest.TestCase):
+    def setUp(self):
+        self.validator = length(3, 5)
+
+    def test_valid(self):
+        self.assertIsNone(self.validator('abc'))
+        self.assertIsNone(self.validator('abcd'))
+        self.assertIsNone(self.validator('abcde'))
+
+    def test_invalid(self):
+        self.assertEqual('String must be at least 3 characters in length', self.validator('ab'))
+        self.assertEqual('String must be at most 5 characters in length', self.validator('abcdef'))
+        
+    def test_max_length_with_keyword(self):
+        validator = length(max=5)
+        self.assertIsNone(self.validator('abcde'))
+        self.assertEqual('String must be at most 5 characters in length', self.validator('abcdef'))
+        
