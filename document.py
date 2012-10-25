@@ -31,7 +31,7 @@ class Document(dict):
                 self[key] = value        
 
     def __getattr__(self, name):
-        if self.has_key(name):
+        if name in self:
             return self[name]
         raise AttributeError("{0} is not found")
 
