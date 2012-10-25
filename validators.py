@@ -1,3 +1,5 @@
+import re
+
 def one_of(*args):
     if len(args) == 1 and isinstance(args[0], list):
         items = tuple(args[0])
@@ -54,4 +56,13 @@ def length(min=None, max=None):
             return "String must be at least {0} characters in length".format(min)
         if max and len(value) > max:
             return "String must be at most {0} characters in length".format(max)
+    return validate
+
+
+def match(pattern):
+    regex = re.compile(pattern)
+
+    def validate(value):
+        if not regex.match(value):
+            return "String must match regex"
     return validate

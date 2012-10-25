@@ -1,4 +1,4 @@
-from validators import one_of, gte, lte, gt, lt, between, length
+from validators import one_of, gte, lte, gt, lt, between, length, match
 import unittest
 
 
@@ -98,6 +98,7 @@ class TestLt(unittest.TestCase):
             "Value must be less than 3", 
             self.validator(3))
 
+
 class TestLen(unittest.TestCase):
     def setUp(self):
         self.validator = length(3, 5)
@@ -113,6 +114,16 @@ class TestLen(unittest.TestCase):
         
     def test_max_length_with_keyword(self):
         validator = length(max=5)
+        self.assertIsNone(validator('abcde'))
+        self.assertEqual('String must be at most 5 characters in length', validator('abcdef'))
+
+
+class TestMatch(unittest.TestCase):
+    def setUp(self):
+        self.validator = match("^[a-z]+$")
+
+    def test_valid(self):
         self.assertIsNone(self.validator('abcde'))
-        self.assertEqual('String must be at most 5 characters in length', self.validator('abcdef'))
-        
+
+    def test_invalid(self):
+        self.assertEqual("String must match regex", self.validator('ABCde'))
