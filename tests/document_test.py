@@ -31,6 +31,9 @@ class TestDocument(unittest.TestCase):
         with self.assertRaises(Exception):
             Document({'contains space': 34})
         
+        with self.assertRaises(Exception):
+            Document({'': 45})
+
     def test_creates_nested_document_tree(self):
         document = self._get_document()
         self.assertIsInstance(document['content'], Document)
