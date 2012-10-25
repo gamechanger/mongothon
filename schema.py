@@ -5,12 +5,14 @@ from inspect import getargspec
 SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool]
 
 def _append_path(prefix, field):
-    if prefix:
+    """Appends the given field to the given path prefix."""
         return "{0}.{1}".format(prefix, field)
     else:
         return field
 
 def _verify_schema(schema, path_prefix=None):
+    """Verifies that the given schema is valid. This method is recursive and verifies and
+    schemas nested within the given schema."""
     for field, spec in schema.doc_spec.iteritems():
         path = _append_path(path_prefix, field)
         
@@ -42,6 +44,8 @@ def _verify_schema(schema, path_prefix=None):
 
 
 def _verify_field_spec(spec, path):
+    """Verifies a given field specification is valid, recursing into nested schemas if required."""
+
     # Required should be a boolean
     if 'required' in spec and not isinstance(spec['required'], bool):
         raise SchemaFormatException("{0} required declaration should be True or False", path)
@@ -86,6 +90,8 @@ def _verify_field_spec(spec, path):
 
 
 def _verify_validator(validator, path):
+    """Verifies that a given validator associated with the field at the given path is legitimate."""
+
     # Validator should be a function
     if not isinstance(validator, FunctionType):
         raise SchemaFormatException("Invalid validations for {0}", path)
@@ -95,7 +101,13 @@ def _verify_validator(validator, path):
     if len(args) != 1:
         raise SchemaFormatException("Invalid validations for {0}", path)
 
+
 def _validate_instance_against_schema(instance, schema, errors, path_prefix=''):
+    """Validates that the given instance of a document conforms to the given schema's
+    structure and validations. Any validation errors are added to the given errors 
+    collection. The caller should assume the instance is considered valid if the 
+    errors collection is empty when this method returns."""
+
     if not isinstance(instance, dict):
         errors[path_prefix] = "Expected instance of dict to validate against schema."
         return
@@ -128,6 +140,10 @@ def _validate_instance_against_schema(instance, schema, errors, path_prefix=''):
 
 
 def _validate_value(value, field_spec, path, errors):
+    """Validates that the given field value is valid given the associated 
+    field spec and path. Any validation failures are added to the given errors
+    collection."""
+
     # Check for an empty value and bail out if necessary applying the required
     # constraint in the process.
     if value is None:
@@ -168,6 +184,10 @@ def _validate_value(value, field_spec, path, errors):
 
 
 def _apply_schema_defaults(schema, instance):
+    """Applies the defaults described by the given schema to the given
+    document instance as appropriate. Defaults are only applied to 
+    fields which are currently unset."""
+
     for field, spec in schema.doc_spec.iteritems():
 
         # Determine if a value already exists for the field
@@ -198,12 +218,16 @@ def _apply_schema_defaults(schema, instance):
 
 
 class SchemaFormatException(Exception):
+    """Exception which encapsulates a problem found during the verification of a
+    a schema."""
+
     def __init__(self, message, path):
         self._message = message.format(path)
         self._path = path
 
     @property
     def path(self):
+        """The field path at which the format error was found."""
         return self._path
 
     def __str__(self):
@@ -211,11 +235,15 @@ class SchemaFormatException(Exception):
 
 
 class ValidationException(Exception):
+    """Exception which is thrown in response to the failed validation of a document
+    against it's associated schema."""
+
     def __init__(self, errors):
         self._errors = errors
 
     @property
     def errors(self):
+        """A dict containing the validation error(s) found at each field path."""
         return self._errors
 
     def __str__(self):
@@ -248,9 +276,11 @@ class VirtualField(object):
         self._setter = fn
 
     def has_getter(self):
+        """Returns true if the given virtual field has an associated getter function."""
         return self._getter != None
 
     def has_setter(self):
+        """Returns true if the given virtual field has an associated setter function."""
         return self._setter != None
 
     def on_get(self, doc):
@@ -265,6 +295,8 @@ class VirtualField(object):
 
 
 class Schema(object):
+    """A Schema encapsulates the structure and constraints of a Mongo document."""
+
     def __init__(self, doc_spec):
         self._doc_spec = doc_spec
         self._virtuals = {}
