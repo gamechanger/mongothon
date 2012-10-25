@@ -39,6 +39,16 @@ def create(schema, collection):
             """Apply schema defaults to this document."""
             schema.apply_defaults(self)
 
+        def __getattr__(self, name):
+            if name in schema.virtuals:
+                return schema.virtuals[name].on_get(self)
+            return super(Model, self).__getattr__(name)
+
+        def __setattr__(self, name, value):
+            if name in schema.virtuals:
+                schema.virtuals[name].on_set(value, self)
+            super(Model, self).__setattr__(name, value)
+
         def save(self, *args, **kwargs):
             # Create a working copy of ourselves and validate it
             working = self._create_working()

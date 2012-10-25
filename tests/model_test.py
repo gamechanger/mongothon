@@ -21,6 +21,14 @@ car_schema = Schema({
     "options": [basestring]
 })
 
+def set_description(value, doc):
+    doc.make, doc.model = value.split(' ')
+
+car_schema.virtual("description", 
+    getter=lambda doc: "%s %s" % (doc.make, doc.model),
+    setter=set_description)
+
+
 doc = {
     "make":     "Peugeot",
     "model":    "406",
@@ -113,7 +121,7 @@ class TestModel(unittest.TestCase):
     def test_validation_does_not_apply_defaults_to_instance(self):
         del self.car.trim['doors']
         self.car.validate()
-        self.assertFalse(self.car.trim.has_key('doors'))
+        self.assertFalse('doors' in self.car.trim)
 
     def test_apply_defaults(self):
         del self.car.trim['doors']
@@ -131,7 +139,7 @@ class TestModel(unittest.TestCase):
         try:
             self.car.save()
         except:
-            self.assertFalse(self.car.trim.has_key('doors'))
+            self.assertFalse('doors' in self.car.trim)
 
     def test_save_passes_arguments_to_collection(self):
         self.car.save(manipulate=False, safe=True, check_keys=False)
@@ -252,6 +260,11 @@ class TestModel(unittest.TestCase):
         self.car.validate()
         self.assertEquals([call.validate(self.car), call.middleware(self.car)], tracker.mock_calls)
 
+    def test_virtual_field_getter(self):
+        self.assertEquals('Peugeot 406', self.car.description)
 
-
+    def test_virtual_field_setter(self):
+        self.car.description = "Volvo S60"
+        self.assertEquals('Volvo', self.car.make)
+        self.assertEquals('S60', self.car.model)
 
