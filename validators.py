@@ -23,3 +23,17 @@ def lte(max_value):
         if value > max_value:
             return "{0} is greater than the maximum value of {1}".format(value, max_value)
     return validate
+
+
+def gt(gt_value):
+    def validate(value):
+        if value <= gt_value:
+            return "Value must be greater than {0}".format(gt_value)
+    return validate
+
+
+def lt(lt_value):
+    def validate(value):
+        if value >= lt_value:
+            return "Value must be less than {0}".format(lt_value)
+    return validate
