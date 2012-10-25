@@ -37,3 +37,12 @@ def lt(lt_value):
         if value >= lt_value:
             return "Value must be less than {0}".format(lt_value)
     return validate
+
+
+def between(min_value, max_value):
+    def validate(value):
+        if value < min_value:
+            return "{0} is less than the minimum value of {1}".format(value, min_value)
+        if value > max_value:
+            return "{0} is greater than the maximum value of {1}".format(value, max_value)
+    return validate
