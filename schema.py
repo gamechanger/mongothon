@@ -6,6 +6,7 @@ SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool]
 
 def _append_path(prefix, field):
     """Appends the given field to the given path prefix."""
+    if prefix:
         return "{0}.{1}".format(prefix, field)
     else:
         return field
@@ -322,11 +323,19 @@ class Schema(object):
         if len(errors) > 0:
             raise ValidationException(errors)
 
-    def virtual(self, field_name):
+    def virtual(self, field_name, getter=None, setter=None):
         """Allows a virtual field definition to be provided."""
         if not field_name in self._virtuals:
             self._virtuals[field_name] = VirtualField()
-        return self._virtuals[field_name]
+
+        virtual_field = self._virtuals[field_name]
+
+        if getter:
+            virtual_field.get(getter)
+        if setter:
+            virtual_field.set(setter)
+
+        return virtual_field
 
     @property
     def virtuals(self):

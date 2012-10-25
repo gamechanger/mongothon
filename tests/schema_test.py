@@ -276,14 +276,15 @@ class TestDefaultApplication(unittest.TestCase):
 
 class TestVirtualFieldDefinition(unittest.TestCase):
     def test_virtual_getter(self):
-        name.virtual("full_name").get(lambda doc: "%s %s" % (doc['first'], doc['last']))
+        name.virtual("full_name", 
+            getter=lambda doc: "%s %s" % (doc['first'], doc['last']))
         doc = {"first": "John", "last": "Smith"}
         self.assertTrue(name.virtuals['full_name'].has_getter())
         self.assertEqual("John Smith", name.virtuals['full_name'].on_get(doc))
 
     def test_field_getter_redefinition(self):
-        name.virtual("full_name").get(lambda doc: "%s %s" % (doc['last'], doc['first']))
-        name.virtual("full_name").get(lambda doc: "%s %s" % (doc['first'], doc['last']))
+        name.virtual("full_name", getter=lambda doc: "%s %s" % (doc['last'], doc['first']))
+        name.virtual("full_name", getter=lambda doc: "%s %s" % (doc['first'], doc['last']))
         doc = {"first": "John", "last": "Smith"}
         self.assertTrue(name.virtuals['full_name'].has_getter())
         self.assertEqual("John Smith", name.virtuals['full_name'].on_get(doc))
@@ -292,7 +293,7 @@ class TestVirtualFieldDefinition(unittest.TestCase):
         def full_name_setter(value, doc):
             doc['first'] = value.split(' ')[0]
             doc['last'] = value.split(' ')[1]
-        name.virtual("full_name").set(full_name_setter)
+        name.virtual("full_name", setter=full_name_setter)
         doc = {"first": "John", "last": "Smith"}
         self.assertTrue(name.virtuals['full_name'].has_setter())
         name.virtuals['full_name'].on_set("Bob Jones", doc)
@@ -308,8 +309,8 @@ class TestVirtualFieldDefinition(unittest.TestCase):
             doc['first'] = value.split(' ')[0]
             doc['last'] = value.split(' ')[1]
 
-        name.virtual("full_name").set(backward_setter)
-        name.virtual("full_name").set(full_name_setter)
+        name.virtual("full_name", setter=backward_setter)
+        name.virtual("full_name", setter=full_name_setter)
         doc = {"first": "John", "last": "Smith"}
         name.virtuals['full_name'].on_set("Bob Jones", doc)
         self.assertEqual("Bob", doc['first'])
@@ -322,8 +323,8 @@ class TestVirtualFieldDefinition(unittest.TestCase):
         def getter_two_args(romy, michelle):
             pass
 
-        self.assertRaises(ValueError, name.virtual("thing").get, getter_no_args)
-        self.assertRaises(ValueError, name.virtual("thing").get, getter_two_args)
+        self.assertRaises(ValueError, name.virtual, "thing", getter=getter_no_args)
+        self.assertRaises(ValueError, name.virtual, "thing", getter=getter_two_args)
 
     def test_detects_invalid_setter_signature(self):
         def setter_one_arg(maverick):
@@ -332,6 +333,6 @@ class TestVirtualFieldDefinition(unittest.TestCase):
         def setter_three_args(good, bad, ugly):
             pass
 
-        self.assertRaises(ValueError, name.virtual("thing").set, setter_one_arg)
-        self.assertRaises(ValueError, name.virtual("thing").set, setter_three_args)
+        self.assertRaises(ValueError, name.virtual, "thing", setter=setter_one_arg)
+        self.assertRaises(ValueError, name.virtual, "thing", setter=setter_three_args)
 
