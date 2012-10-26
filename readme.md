@@ -124,8 +124,25 @@ length(min_length, [max_length])    # is at least the given min length and (opti
 match(pattern)                      # matches the given regex pattern
 ```
 
-
 #### Creating custom validators
+In addition to the provided validators it's easy to create your own custom validators. 
+To create a custom validator:
+ - declare a function which accepts any arguments you want to provide to the validation algorithm
+ - the function should itself return a function which will ultimately be called by Mongothon when validating a field value. The function should:
+    - accept a single argument - the field value being validated
+    - return nothing if the given value is valid
+    - return a string describing the validation error if the value is invalid
+
+Here's the declaration of an example custom validator:
+```python
+def startswith(prefix):
+    def validate(value):
+        if not value.startswith(prefix):
+            return "String must start with %s" % prefix
+
+# Usage:
+schema = Schema({"full_name": {"type": basestring, "validates": startswith("Mr")}})
+```
 
 ### Nested schemas
 
