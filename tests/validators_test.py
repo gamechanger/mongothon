@@ -1,4 +1,4 @@
-from validators import one_of, gte, lte, gt, lt, between, length, match
+from mongothon.validators import one_of, gte, lte, gt, lt, between, length, match
 import unittest
 
 

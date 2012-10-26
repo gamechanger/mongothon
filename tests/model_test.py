@@ -1,9 +1,9 @@
-from model import create
+from mongothon.model import create
 import unittest
 from mock import Mock, ANY, call
-from document import Document
-from schema import Schema
-from validators import one_of
+from mongothon.document import Document
+from mongothon.schema import Schema
+from mongothon.validators import one_of
 from bson import ObjectId
 
 car_schema = Schema({

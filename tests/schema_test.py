@@ -1,5 +1,5 @@
-from schema import Schema, ValidationException, SchemaFormatException
-from validators import one_of, lte, gte
+from mongothon.schema import Schema, ValidationException, SchemaFormatException
+from mongothon.validators import one_of, lte, gte
 import unittest
 from datetime import datetime
 

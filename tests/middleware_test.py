@@ -1,4 +1,4 @@
-from middleware import MiddlewareRegistrar
+from mongothon.middleware import MiddlewareRegistrar
 from mock import Mock
 import unittest
 
