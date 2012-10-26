@@ -113,7 +113,17 @@ schema = Schema({"num_wheels": {"type": int, "validates": [gte(0), lte(6)]}})
 
 #### Provided validators
 Mongothon provides the following validators out-of-the-box:
-|
+```python
+# Validator                         # Validates that the field...
+gte(value)                          # is greater than or equal to the given value
+lte(value)                          # is less than or equal to the given value
+gt(value)                           # is greater than the given value
+lt(value)                           # is less than the given value
+between(min_value, max_value)       # is between the given min and max values
+length(min_length, [max_length])    # is at least the given min length and (optionally) at most the given max length 
+match(pattern)                      # matches the given regex pattern
+```
+
 
 #### Creating custom validators
 
