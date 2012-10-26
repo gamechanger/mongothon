@@ -161,3 +161,8 @@ schema = Schema({"full_name": {"type": basestring, "validates": startswith("Mr")
 ### Middleware
 
 #### The save document flow
+
+
+# Developing
+
+To run Mongothon's tests, simply run `python setup.py nosetests` at the command line.
