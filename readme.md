@@ -100,10 +100,22 @@ import datetime
 schema = Schema({"created_date": {"type": datetime, "default": datetime.now}})
 ```
 
-
 ### Validation
+Mongothon allows you to specify validation for a field using the `"validates"` key in the field spec. 
+You can specify a single validator:
+```python
+schema = Schema({"color": {"type": basestring, "validates": one_of("red", "green", "blue")}})
+```
+or multiple validators:
+```python
+schema = Schema({"num_wheels": {"type": int, "validates": [gte(0), lte(6)]}})
+```
 
 #### Provided validators
+Mongothon provides the following validators out-of-the-box:
+|
+
+#### Creating custom validators
 
 ### Nested schemas
 
