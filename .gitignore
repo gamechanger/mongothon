@@ -3,3 +3,6 @@
 build*.egg-info
 *.egg
 Mongothon.egg-info
+build
+dist
+env
