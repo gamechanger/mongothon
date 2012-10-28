@@ -2,8 +2,10 @@
 
 Mongothon is a MongoDB object-document mapping API for Python, loosely based on the awesome [mongoose.js](http://mongoosejs.com/) library.
 
+# Installation
 
-# Quick Start
+
+# Getting Started
 
 Mongothon allows you to declaratively express the structure and contraints of your Mongo document in a reusable Schema using Python dicts. Schemas can then be used to generate reusable Model classes which can be used in your application to perform IO with your associated Mongo collection.
 
@@ -145,24 +147,164 @@ schema = Schema({"full_name": {"type": basestring, "validates": startswith("Mr")
 ```
 
 ### Nested schemas
+Schemas may be nested within one another in order to describe the structure of documents containing deep graphs. 
+
+Nested can either be declared inline:
+```python
+blog_post_schema = Schema({
+    "author":   {"type": Schema({"first_name": {"type": basestring}, "last_name": {"type": basestring}})},
+    "title":    {"type": basestring},
+    "content":  {"type": basestring}
+})
+
+```
+or declared in isolation and then referenced (and potentially reused between multiple parent schemas):
+```python
+name_schema = Schema({
+    "first_name":   {"type": basestring}, 
+    "last_name":    {"type": basestring}
+})
+
+blog_post_schema = Schema({
+    "author":   {"type": name_schema},
+    "title":    {"type": basestring},
+    "content":  {"type": basestring}
+})
+
+comment_schema = Schema({
+    "author":   {"type": name_schema, "required":True},
+    "comment":  {"type": base_string}
+})
+
+```
+In each case the nested schema is provided as the `type` parameter in the parent field's spec and can be declared as `"required"=True` if so desired. Any validation present within the nested schema is applied wherever the schema
+is used.
+
 
 ### Embedded collections
+As well as nesting schemas directly under fields, Mongothon supports embedded collections within documents. To declare an embedded collection, simply declare the type of the embedded items using Python list syntax:
+```python
+line_item_schema = Schema({
+    "price":        {"type": int, "required": True}
+    "item_name":    {"type": basestring, "required": True} 
+})
+
+order_schema = Schema({
+    "line_items":   [line_item_schema]
+    "total_due":    {"type": int}
+})
+```
+Simple primitive types can be embedded as well as full schemas:
+```python
+bookmark_schema = Schema({
+    "url":      {"type": basestring},
+    "tags":     [basestring]
+})
+```
 
 ### Virtual fields
+Mongothon supports defining virtual fields on schemas through the registration of named getter and setter functions.Virtual fields are useful when you want to provide a view over a document's fields without needing to store the derived view as a separate field in the database. 
+
+To declare a virtual field, register a getter and/or setter function on the schema:
+```python
+name_schema = Schema({
+    "first_name":   {"type": basestring}, 
+    "last_name":    {"type": basestring}
+})
+
+def get_full_name(doc):
+    return "%s %s" % (doc.first_name, doc.last_name)
+
+def set_full_name(value, doc):
+    doc.first_name, doc.last_name = value.split(" ")
+
+name_schema.virtual("full_name", getter=get_full_name, setter=set_full_name)
+```
+
+Getter functions receive the document as the one and only argument and should return the value of the virtual field for that document.
+
+Setter functions receive the value being set and destination document as arguments. The setter should update the document as appropriate from the given value.
 
 ## Models
+Where Schemas are used to declare the structure and constraints of a Mongo document, Models allow those Schemas to be used in interacting with the database to enforce that document structure.
 
 ### Creating a model class
-
-### Instance methods
+To create a new model class from an existing schema, use the `create_model` method:
+```python
+Order = create_model(order_schema, db['orders'])
+```
+The second argument which must be provided to `create_model` is the PyMongo collection object associated with the underlying MongoDB collection to be associated with the model. 
 
 ### Class methods
+Model classes provide a number of class methods which can be used to interact with the underlying collection as a whole.
+
+#### Finding documents
+Model classes can be used to find individual documents by ID:
+```python
+order = Order.find_by_id(some_id)  # returns an instance of Order
+```
+or using a search condition:
+```python
+order = Order.find_one({'total_due': {'$gte': '10'}})  # returns an instance of Order
+```
+Selections of documents can also be retrieved using search criteria:
+```python
+order = Order.find({'total_due': {'$gte': '10'}})  # returns a cursor containing Order instances
+```
+
+#### Updating documents
+Model classes can be used to perform updates on the collection:
+```python
+Order.update({'total_due': {'$gte': '10'}}, {'$unset': {'line_items': 1}})
+```
+
+#### Counting items
+```python
+Order.count()
+```
+
+### Instance methods
+Instances of models allow documents to be easily created, manipulated, save and deleted.
+
+#### Creating documents
+Create a new instance of a model by passing the document as a Python dict into the constructor:
+```python
+order = Order({
+    "line_items": [
+        {"item_name": "iPhone 5", "price": 200},
+        {"item_name": "Mac Mini", "price": 500}
+    ],
+    "total_due": 700
+})
+```
+#### Manipulating documents
+Document fields can be updated via model instance properties which are automatically available:
+```python
+order.line_items[1].item_name = "Mac Mini Gen. 2"
+```
+
+#### Saving documents
+In order to persist document changes to the DB, the model can be saved:
+```python
+order.save()
+```
+Saving an existing, previously loaded document will cause it to be updated. Saving a new document will cause it to be inserted. 
+In all cases, saving a document results in schema defaults being applied where appropriate and the document being validated before it is saved to the database. In the event of a validation failure `save()` will raise a ValidationException.
+
+#### Deleting documents
+A document may be removed from the underlying collection by calling the `delete()` method on the associated model instance:
+```python
+order = Order.find_by_id(some_id)
+order.delete()  # document is removed from the DB
+```
 
 ### Middleware
 
 #### The save document flow
 
 
-# Developing
+# Developing and Contributing
 
 To run Mongothon's tests, simply run `python setup.py nosetests` at the command line.
+
+All contributions submitted as GitHub pull requests are warmly received.
