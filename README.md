@@ -298,9 +298,28 @@ order = Order.find_by_id(some_id)
 order.delete()  # document is removed from the DB
 ```
 
-### Middleware
+## Middleware
 
-#### The save document flow
+Models allow you to register middleware functions which will be passed flow control at various specific points in the lifecycle of a model. 
+
+Currently supported middleware events are:
+
+`before_save` - called just before a document is saved
+`after_save` - called just after a document is saved
+`before_validate` - called just before a document is validated
+`after_validate` - called just after a document is validated
+
+In each case the registered middleware function will be passed the document object. 
+
+Example:
+```python
+def log_saved(doc):
+    logging.info("Saved order {0}", doc._id)
+
+# Register the function
+Order.after_save(log_saved)
+```
+There is no limit to the number of middleware functions which can be registered.
 
 
 # Developing and Contributing
