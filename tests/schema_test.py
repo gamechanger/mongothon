@@ -3,36 +3,7 @@ from mongothon.schema import ValidationException, SchemaFormatException
 from mongothon.validators import one_of, lte, gte
 import unittest
 from datetime import datetime
-
-def stubnow():
-    return datetime(2012, 4, 5)
-
-# TEST SCHEMAS
-comment = Schema({
-    "commenter":    {"type": basestring, "required": True},
-    "email":        {"type": basestring, "required": False},
-    "comment":      {"type": basestring, "required": True},
-    "votes":        {"type": int, "default": 0}
-})
-
-name = Schema({
-    "first":    {"type": basestring, "required": True},
-    "last":     {"type": basestring, "required": True}
-})
-
-blog_post = Schema({
-    "author":   {"type": name, "required": True},
-    "content":  {"type": Schema({
-        "title":        {"type": basestring, "required": True},
-        "text":         {"type": basestring, "required": True},
-        "page_views":   {"type": int, "default": 1}
-    }), "required": True},
-    "category": {"type": basestring, "validates":one_of("cooking", "politics")},
-    "comments": [comment],
-    "likes":        {"type": int, "default": 0},
-    "creation_date": {"type": datetime, "default": stubnow},
-    "tags":     [basestring]
-})
+from sample import blog_post_schema, name_schema, stubnow, valid_doc
 
 
 class TestSchemaVerificationTest(unittest.TestCase):
@@ -115,7 +86,7 @@ class TestSchemaVerificationTest(unittest.TestCase):
 
 
     def test_valid_schema_with_nesting(self):
-        blog_post.verify()
+        blog_post_schema.verify()
 
     def test_unsupported_type_in_nested_schema(self):
         self.assert_spec_invalid(
@@ -154,39 +125,18 @@ class TestSchemaVerificationTest(unittest.TestCase):
             "numbers": [int]
         }).verify()  
 
+
 class TestValidation(unittest.TestCase):
     def setUp(self):
-        self.document = {
-            "author": {
-                "first":    "John",
-                "last":     "Humphreys"
-            },
-            "content": {
-                "title": "How to make cookies",
-                "text": "First start by pre-heating the oven..."
-            },
-            "category": "cooking",
-            "comments": [
-                {
-                    "commenter": "Julio Cesar",
-                    "email": "jcesar@test.com",
-                    "comment": "Great post dude!"
-                },
-                {
-                    "commenter": "Michael Andrews",
-                    "comment": "My wife loves these."
-                }
-            ],
-            "tags": ["cookies", "recipe", "yum"]
-        }
+        self.document = valid_doc()
 
     def assert_document_paths_invalid(self, document, paths):
         with self.assertRaises(ValidationException) as cm:
-            blog_post.validate(document)
+            blog_post_schema.validate(document)
         self.assertListEqual(paths, cm.exception.errors.keys())
 
     def test_valid_document(self):
-        blog_post.validate(self.document)
+        blog_post_schema.validate(self.document)
 
     def test_missing_required_field(self):
         del self.document['author']
@@ -251,53 +201,53 @@ class TestDefaultApplication(unittest.TestCase):
         }
 
     def test_apply_default_function(self):
-        blog_post.apply_defaults(self.document)
+        blog_post_schema.apply_defaults(self.document)
         self.assertEqual(stubnow(), self.document['creation_date'])
         
     def test_apply_default_value(self):
-        blog_post.apply_defaults(self.document)
+        blog_post_schema.apply_defaults(self.document)
         self.assertEqual(0, self.document['likes'])
 
     def test_apply_default_value_in_nested_document(self):
-        blog_post.apply_defaults(self.document)
+        blog_post_schema.apply_defaults(self.document)
         self.assertEqual(1, self.document['content']['page_views'])
 
     def test_apply_default_value_in_nested_collection(self):
-        blog_post.apply_defaults(self.document)
+        blog_post_schema.apply_defaults(self.document)
         self.assertEqual(0, self.document['comments'][0]['votes'])
         self.assertEqual(0, self.document['comments'][1]['votes'])
 
     def test_default_value_does_not_overwrite_existing(self):
         self.document['likes'] = 35
         self.document['creation_date'] = datetime(1980, 5, 3)
-        blog_post.apply_defaults(self.document)
+        blog_post_schema.apply_defaults(self.document)
         self.assertEqual(35, self.document['likes'])
         self.assertEqual(datetime(1980, 5, 3), self.document['creation_date'])
 
 
 class TestVirtualFieldDefinition(unittest.TestCase):
     def test_virtual_getter(self):
-        name.virtual("full_name", 
+        name_schema.virtual("full_name_schema", 
             getter=lambda doc: "%s %s" % (doc['first'], doc['last']))
         doc = {"first": "John", "last": "Smith"}
-        self.assertTrue(name.virtuals['full_name'].has_getter())
-        self.assertEqual("John Smith", name.virtuals['full_name'].on_get(doc))
+        self.assertTrue(name_schema.virtuals['full_name_schema'].has_getter())
+        self.assertEqual("John Smith", name_schema.virtuals['full_name_schema'].on_get(doc))
 
     def test_field_getter_redefinition(self):
-        name.virtual("full_name", getter=lambda doc: "%s %s" % (doc['last'], doc['first']))
-        name.virtual("full_name", getter=lambda doc: "%s %s" % (doc['first'], doc['last']))
+        name_schema.virtual("full_name_schema", getter=lambda doc: "%s %s" % (doc['last'], doc['first']))
+        name_schema.virtual("full_name_schema", getter=lambda doc: "%s %s" % (doc['first'], doc['last']))
         doc = {"first": "John", "last": "Smith"}
-        self.assertTrue(name.virtuals['full_name'].has_getter())
-        self.assertEqual("John Smith", name.virtuals['full_name'].on_get(doc))
+        self.assertTrue(name_schema.virtuals['full_name_schema'].has_getter())
+        self.assertEqual("John Smith", name_schema.virtuals['full_name_schema'].on_get(doc))
 
     def test_virtual_setter(self):
-        def full_name_setter(value, doc):
+        def full_name_schema_setter(value, doc):
             doc['first'] = value.split(' ')[0]
             doc['last'] = value.split(' ')[1]
-        name.virtual("full_name", setter=full_name_setter)
+        name_schema.virtual("full_name_schema", setter=full_name_schema_setter)
         doc = {"first": "John", "last": "Smith"}
-        self.assertTrue(name.virtuals['full_name'].has_setter())
-        name.virtuals['full_name'].on_set("Bob Jones", doc)
+        self.assertTrue(name_schema.virtuals['full_name_schema'].has_setter())
+        name_schema.virtuals['full_name_schema'].on_set("Bob Jones", doc)
         self.assertEqual("Bob", doc['first'])
         self.assertEqual("Jones", doc['last'])
 
@@ -306,14 +256,14 @@ class TestVirtualFieldDefinition(unittest.TestCase):
             doc['last'] = value.split(' ')[0]
             doc['first'] = value.split(' ')[1]       
 
-        def full_name_setter(value, doc):
+        def full_name_schema_setter(value, doc):
             doc['first'] = value.split(' ')[0]
             doc['last'] = value.split(' ')[1]
 
-        name.virtual("full_name", setter=backward_setter)
-        name.virtual("full_name", setter=full_name_setter)
+        name_schema.virtual("full_name_schema", setter=backward_setter)
+        name_schema.virtual("full_name_schema", setter=full_name_schema_setter)
         doc = {"first": "John", "last": "Smith"}
-        name.virtuals['full_name'].on_set("Bob Jones", doc)
+        name_schema.virtuals['full_name_schema'].on_set("Bob Jones", doc)
         self.assertEqual("Bob", doc['first'])
         self.assertEqual("Jones", doc['last'])
 
@@ -324,8 +274,8 @@ class TestVirtualFieldDefinition(unittest.TestCase):
         def getter_two_args(romy, michelle):
             pass
 
-        self.assertRaises(ValueError, name.virtual, "thing", getter=getter_no_args)
-        self.assertRaises(ValueError, name.virtual, "thing", getter=getter_two_args)
+        self.assertRaises(ValueError, name_schema.virtual, "thing", getter=getter_no_args)
+        self.assertRaises(ValueError, name_schema.virtual, "thing", getter=getter_two_args)
 
     def test_detects_invalid_setter_signature(self):
         def setter_one_arg(maverick):
@@ -334,6 +284,6 @@ class TestVirtualFieldDefinition(unittest.TestCase):
         def setter_three_args(good, bad, ugly):
             pass
 
-        self.assertRaises(ValueError, name.virtual, "thing", setter=setter_one_arg)
-        self.assertRaises(ValueError, name.virtual, "thing", setter=setter_three_args)
+        self.assertRaises(ValueError, name_schema.virtual, "thing", setter=setter_one_arg)
+        self.assertRaises(ValueError, name_schema.virtual, "thing", setter=setter_three_args)
 
