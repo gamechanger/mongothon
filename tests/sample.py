@@ -37,8 +37,8 @@ blog_post_schema = Schema({
 })
 
 
-def valid_doc():
-    return {
+def valid_doc(overrides=None):
+    doc = {
         "author": {
             "first":    "John",
             "last":     "Humphreys"
@@ -66,4 +66,47 @@ def valid_doc():
             }
         ],
         "tags": ["cookies", "recipe", "yum"]
+    }
+    if overrides:
+        doc.update(overrides)
+    return doc
+
+
+# The expected version of the document once it has been saved to the DB,
+# including the use of Unicode and applied defaults.
+def expected_db_doc(object_id):
+    return {
+        u"_id": object_id,
+        u"author": {
+            u"first":    u"John",
+            u"last":     u"Humphreys"
+        },
+        u"content": {
+            u"title": u"How to make cookies",
+            u"text": u"First start by pre-heating the oven...",
+            u"page_views": 1
+        },
+        u"category": u"cooking",
+        u"comments": [
+            {
+                u"commenter": {
+                    u"first": u"Julio",
+                    u"last": u"Cesar"
+                },
+                u"email": u"jcesar@test.com",
+                u"comment": u"Great post dude!",
+                u"votes": 0
+            },
+            {
+                u"commenter": {
+                    u"first": u"Michael",
+                    u"last": u"Andrews"
+                },
+                u"comment": u"My wife loves these.",
+                u"votes": 0
+            }
+        ],
+        u"likes": 0,
+        u"tags": [u"cookies", u"recipe", u"yum"],
+        u"creation_date": stubnow()
     }

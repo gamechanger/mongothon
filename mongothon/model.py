@@ -78,6 +78,10 @@ def create_model(schema, collection):
             collection.update(*args, **kwargs)
 
         @staticmethod
+        def remove(*args, **kwargs):
+            collection.remove(*args, **kwargs)
+
+        @staticmethod
         def count():
             return collection.count()
 

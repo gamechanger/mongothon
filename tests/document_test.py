@@ -48,4 +48,4 @@ class TestDocument(unittest.TestCase):
         document = self._get_document()
         document.category = "baking"
         self.assertEqual("baking", document['category'])
-        
+
