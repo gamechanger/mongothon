@@ -1,10 +1,9 @@
-import os
 import setuptools
 
 
 setuptools.setup(
     name="Mongothon",
-    version="0.1.0",
+    version="0.1.1",
     author="Tom Leach",
     author_email="tom@leach.it",
     description="A MongoDB object-document mapping layer for Python",
