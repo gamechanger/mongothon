@@ -1,8 +1,8 @@
-from mongothon.model import create
+from mongothon import create_model
 import unittest
 from mock import Mock, ANY, call
-from mongothon.document import Document
-from mongothon.schema import Schema
+from mongothon import Document
+from mongothon import Schema
 from mongothon.validators import one_of
 from bson import ObjectId
 
@@ -97,7 +97,7 @@ class TestModel(unittest.TestCase):
 
     def setUp(self):
         self.mock_collection = Mock()
-        self.Car = create(car_schema, self.mock_collection)
+        self.Car = create_model(car_schema, self.mock_collection)
         self.car = self.Car(doc)
 
     def test_can_be_treated_as_a_dict(self):

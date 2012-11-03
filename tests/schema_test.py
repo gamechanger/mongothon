@@ -1,4 +1,5 @@
-from mongothon.schema import Schema, ValidationException, SchemaFormatException
+from mongothon import Schema
+from mongothon.schema import ValidationException, SchemaFormatException
 from mongothon.validators import one_of, lte, gte
 import unittest
 from datetime import datetime
@@ -58,7 +59,7 @@ class TestSchemaVerificationTest(unittest.TestCase):
     def test_required_should_be_a_boolean(self):
         self.assert_spec_invalid(
             {
-                "author": {'type':int ,'required':23}
+                "author": {'type': int, 'required': 23}
             }, 
             'author')
 
@@ -120,7 +121,7 @@ class TestSchemaVerificationTest(unittest.TestCase):
         self.assert_spec_invalid(
             {
                 "content": {'type': Schema({
-                    "somefield" : {"type": tuple}
+                    "somefield": {"type": tuple}
                 })}
             },
             'content.somefield')
@@ -128,14 +129,14 @@ class TestSchemaVerificationTest(unittest.TestCase):
     def test_invalid_nested_collection_with_multiple_schemas(self):
         self.assert_spec_invalid(
             {
-                "items": [Schema({"somefield" : {"type": int}}), Schema({"other" : {"type": int}})]
+                "items": [Schema({"somefield": {"type": int}}), Schema({"other": {"type": int}})]
             },
             'items')
 
     def test_unsupported_type_in_nested_collection(self):
         self.assert_spec_invalid(
             {
-                "items": [Schema({"somefield" : {"type": tuple}})]
+                "items": [Schema({"somefield": {"type": tuple}})]
             },
             'items.somefield')
 
@@ -143,7 +144,7 @@ class TestSchemaVerificationTest(unittest.TestCase):
         self.assert_spec_invalid(
             {
                 "content": {'type': Schema({
-                    "somefield" : {"type": int}
+                    "somefield": {"type": int}
                 }), "default": {}}
             },
             'content')

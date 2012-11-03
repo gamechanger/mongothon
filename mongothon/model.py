@@ -3,7 +3,7 @@ from copy import deepcopy
 from bson import ObjectId
 from middleware import MiddlewareRegistrar
 
-def create(schema, collection):
+def create_model(schema, collection):
 
     class Model(Document):
         middleware_registrar = MiddlewareRegistrar()

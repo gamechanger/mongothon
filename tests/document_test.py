@@ -1,4 +1,4 @@
-from mongothon.document import Document
+from mongothon import Document
 import unittest
 
 class TestDocument(unittest.TestCase):
