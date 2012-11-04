@@ -1,4 +1,4 @@
-from mongothon.validators import one_of, gte, lte, gt, lt, between, length, match
+from mongothon.validators import one_of, gte, lte, gt, lt, between, length, match, is_email, is_url
 import unittest
 
 
@@ -105,7 +105,7 @@ class TestLen(unittest.TestCase):
 
     def test_valid(self):
         self.assertIsNone(self.validator('abc'))
-        self.assertIsNone(self.validator('abcd'))
+        self.assertIsNone(self.validator('abcd')
         self.assertIsNone(self.validator('abcde'))
 
     def test_invalid(self):
@@ -127,3 +127,29 @@ class TestMatch(unittest.TestCase):
 
     def test_invalid(self):
         self.assertEqual("String must match regex", self.validator('ABCde'))
+
+
+class TestIsEmail(unittest.TestCase):
+    def setUp(self):
+        self.validator = is_email()
+
+    def test_valid(self):
+        self.assertIsNone(self.validator('s.balmer@hotmail.com'))
+
+    def test_invalid(self):
+        self.assertEqual(
+            "notanemail is not a valid email address", 
+            self.validator("notanemail"))
+
+
+class TestIsUrl(unittest.TestCase):
+    def setUp(self):
+        self.validator = is_url()
+
+    def test_valid(self):
+        self.assertIsNone(self.validator('http://www.github.com'))
+
+    def test_invalid(self):
+        self.assertEqual(
+            "notaurl is not a valid URL", 
+            self.validator("notaurl"))

@@ -125,6 +125,8 @@ between(min_value, max_value)       # is between the given min and max values
 length(min_length, [max_length])    # is at least the given min length and (optionally) at most the given max length 
 match(pattern)                      # matches the given regex pattern
 one_of(values...)                   # is equal to one of the given values
+is_url()                            # is a valid URL
+is_email()                          # is a valid email address
 ```
 
 #### Creating custom validators
