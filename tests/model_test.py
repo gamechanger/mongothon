@@ -159,6 +159,12 @@ class TestModel(unittest.TestCase):
         self.Car.update({'make': 'Peugeot'}, {'model': '106'}, upsert=True)
         self.mock_collection.update.assert_called_with({'make': 'Peugeot'}, {'model': '106'}, upsert=True)
 
+    def test_update_instance(self):
+        oid = ObjectId()
+        self.car._id = oid
+        self.car.update({'model': '106'})
+        self.mock_collection.update.assert_called_with({'_id': oid}, {'model': '106'})
+
     def test_count(self):
         self.mock_collection.count.return_value = 45
         self.assertEquals(45, self.Car.count())

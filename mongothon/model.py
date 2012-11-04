@@ -2,6 +2,7 @@ from document import Document
 from copy import deepcopy
 from bson import ObjectId
 from middleware import MiddlewareRegistrar
+from decorators import static_or_instance
 
 def create_model(schema, collection):
 
@@ -73,9 +74,11 @@ def create_model(schema, collection):
         def insert(*args, **kwargs):
             collection.insert(*args, **kwargs)
 
-        @staticmethod
-        def update(*args, **kwargs):
-            collection.update(*args, **kwargs)
+        @static_or_instance
+        def update(self, *args, **kwargs):
+            if self:
+                return collection.update({"_id": self._id}, *args, **kwargs)
+            return collection.update(*args, **kwargs)
 
         @staticmethod
         def remove(*args, **kwargs):

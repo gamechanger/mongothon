@@ -101,6 +101,17 @@ class TestPyMongoIntegration(unittest.TestCase):
         posts = BlogPost.find({"likes": {"$gte": 5}})
         self.assertEquals(5, posts.count())
 
+    def test_update_instance(self):
+        other = BlogPost(valid_doc())
+        other.save()
+        blog_post = BlogPost(valid_doc())
+        blog_post.save()
+        blog_post.update({"likes": 5})
+        reloaded_blog_post = BlogPost.find_by_id(blog_post._id)
+        reloaded_other_blog_post = BlogPost.find_by_id(other._id)
+        self.assertEqual(5, reloaded_blog_post.likes)
+        self.assertEqual(0, reloaded_other_blog_post.likes)
+
     def test_update_selection(self):
         for i in range(10):
             BlogPost(valid_doc({"likes": i})).save()
