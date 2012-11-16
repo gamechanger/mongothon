@@ -2,10 +2,33 @@ from datetime import datetime
 from types import FunctionType
 from inspect import getargspec
 
+
+
 class Mixed(object):
     """Mixed type, used to indicate a field in a schema can be
-    one of many types. Use as a last resort only."""
-    pass
+    one of many types. Use as a last resort only.
+    The Mixed type can be used directly as a class to indicate
+    any type is permitted for a given field:
+    `"my_field": {"type": Mixed}`
+    It can also be instantiated with list of specific types the 
+    field may is allowed to be for more control:
+    `"my_field": {"type": Mixed(ObjectId, int)}`
+    """
+    def __init__(self, *types):
+        if len(types) < 2:
+            raise ValueError("Mixed type requires at least 2 specific types")
+        for mtype in types:
+            if mtype not in SUPPORTED_TYPES:
+                raise ValueError("{0} is not a supported type.".format(mtype))        
+        self.types = types
+
+    def is_instance_of_enclosed_type(self, value):
+        """Returns true of the given value is an instance of 
+        one of the types enclosed by this mixed type instance."""
+        for mtype in self.types:
+            if isinstance(value, mtype):
+                return True
+        return False
 
 SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool, Mixed]
 
@@ -72,9 +95,8 @@ def _verify_field_spec(spec, path):
         return
 
     # Must be one of the supported types
-    if field_type not in SUPPORTED_TYPES:
+    if field_type not in SUPPORTED_TYPES and not isinstance(field_type, Mixed):
         raise SchemaFormatException("{0} is not declared with a valid type.", path)
-
     
     # Validations should be either a single function or array of functions
     if 'validates' in spec:
@@ -168,8 +190,13 @@ def _validate_value(value, field_spec, path, errors):
             errors[path] = "%s should be an embedded document" % path
         return
 
-    # Otherwise, validate the field - mixed fields can be anything
-    if field_type is not Mixed and not isinstance(value, field_type):
+    # Otherwise, validate the field - mixed fields are handled
+    # slightly differently
+    if isinstance(field_type, Mixed):
+        if not field_type.is_instance_of_enclosed_type(value):
+            errors[path] = "Field should be one of the types specified."
+            return
+    elif field_type is not Mixed and not isinstance(value, field_type):
         errors[path] = "Field should be of type {0}".format(field_type)
         return
 

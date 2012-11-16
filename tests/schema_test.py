@@ -23,7 +23,7 @@ class TestSchemaVerificationTest(unittest.TestCase):
         self.assert_spec_invalid({"author": {'type':tuple}}, 'author')
 
     def test_supported_types(self):
-        field_types = [basestring, int, long, float, bool, datetime, Mixed]
+        field_types = [basestring, int, long, float, bool, datetime, Mixed, Mixed(int, basestring)]
         for field_type in field_types:
             Schema({'some_field': {"type":field_type}}).verify()
             
@@ -126,6 +126,24 @@ class TestSchemaVerificationTest(unittest.TestCase):
         }).verify()  
 
 
+class TestMixedType(unittest.TestCase):
+    def test_instance_requires_at_least_two_types(self):
+        with self.assertRaises(Exception):
+            Mixed(int)
+        Mixed(int, basestring)
+        
+    def test_instance_only_accepts_valid_types(self):
+        with self.assertRaises(Exception):
+            Mixed(int, set)
+
+    def test_matches_enclosed_type(self):
+        mixed = Mixed(int, basestring)
+        self.assertTrue(
+            mixed.is_instance_of_enclosed_type("test"))
+        self.assertFalse(
+            mixed.is_instance_of_enclosed_type(123.45))
+
+
 class TestValidation(unittest.TestCase):
     def setUp(self):
         self.document = valid_doc()
@@ -151,6 +169,10 @@ class TestValidation(unittest.TestCase):
         blog_post_schema.validate(self.document)
         self.document['misc'] = 32
         blog_post_schema.validate(self.document)
+
+    def test_mixed_type_instance_incorrect_type(self):
+        self.document['linked_id'] = 123.45
+        self.assert_document_paths_invalid(self.document, ['linked_id'])
 
     def test_missing_embedded_document(self):
         del self.document['content']
