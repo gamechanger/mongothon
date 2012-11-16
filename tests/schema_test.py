@@ -1,5 +1,5 @@
 from mongothon import Schema
-from mongothon.schema import ValidationException, SchemaFormatException
+from mongothon.schema import ValidationException, SchemaFormatException, Mixed
 from mongothon.validators import one_of, lte, gte
 import unittest
 from datetime import datetime
@@ -23,7 +23,7 @@ class TestSchemaVerificationTest(unittest.TestCase):
         self.assert_spec_invalid({"author": {'type':tuple}}, 'author')
 
     def test_supported_types(self):
-        field_types = [basestring, int, long, float, bool, datetime]
+        field_types = [basestring, int, long, float, bool, datetime, Mixed]
         for field_type in field_types:
             Schema({'some_field': {"type":field_type}}).verify()
             
@@ -145,7 +145,13 @@ class TestValidation(unittest.TestCase):
     def test_incorrect_type(self):
         self.document['author'] = 33
         self.assert_document_paths_invalid(self.document, ['author'])
-        
+    
+    def test_mixed_type(self):
+        self.document['misc'] = "a string"
+        blog_post_schema.validate(self.document)
+        self.document['misc'] = 32
+        blog_post_schema.validate(self.document)
+
     def test_missing_embedded_document(self):
         del self.document['content']
         self.assert_document_paths_invalid(self.document, ['content'])

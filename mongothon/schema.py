@@ -2,7 +2,12 @@ from datetime import datetime
 from types import FunctionType
 from inspect import getargspec
 
-SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool]
+class Mixed(object):
+    """Mixed type, used to indicate a field in a schema can be
+    one of many types. Use as a last resort only."""
+    pass
+
+SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool, Mixed]
 
 def _append_path(prefix, field):
     """Appends the given field to the given path prefix."""
@@ -163,8 +168,8 @@ def _validate_value(value, field_spec, path, errors):
             errors[path] = "%s should be an embedded document" % path
         return
 
-    # Otherwise, validate the field
-    if not isinstance(value, field_type):
+    # Otherwise, validate the field - mixed fields can be anything
+    if field_type is not Mixed and not isinstance(value, field_type):
         errors[path] = "Field should be of type {0}".format(field_type)
         return
 

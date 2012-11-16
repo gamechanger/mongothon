@@ -1,7 +1,7 @@
 """Provides a valid sample set of schemas and documents adhereing to those
 schemas for use in testing."""
 
-from mongothon import Schema
+from mongothon import Schema, Mixed
 from mongothon.validators import one_of
 from datetime import datetime
 
@@ -33,7 +33,8 @@ blog_post_schema = Schema({
     "comments":         [comment_schema],
     "likes":            {"type": int, "default": 0},
     "creation_date":    {"type": datetime, "default": stubnow},
-    "tags":             [basestring]
+    "tags":             [basestring],
+    "misc":             {"type": Mixed}
 })
 
 
