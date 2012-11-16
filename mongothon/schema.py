@@ -20,7 +20,7 @@ class Mixed(object):
         for mtype in types:
             if mtype not in SUPPORTED_TYPES:
                 raise ValueError("{0} is not a supported type.".format(mtype))        
-        self.types = types
+        self.types = set(types)
 
     def is_instance_of_enclosed_type(self, value):
         """Returns true of the given value is an instance of 
