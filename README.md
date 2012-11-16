@@ -4,6 +4,14 @@ Mongothon is a MongoDB object-document mapping API for Python, loosely based on 
 
 # Installation
 
+Install via easy_install:
+```
+easy_install mongothon
+```
+Or, via pip:
+```
+pip install mongothon
+```
 
 # Getting Started
 
