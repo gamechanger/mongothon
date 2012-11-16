@@ -79,7 +79,19 @@ Each field in a Mongothon schema must be given a type by adding a `"type"` key t
 ```python
 schema = Schema({"name": {"type": basestring}})
 ```
-Supported field types are: `basestring`, `int`, `float`, `datetime`, `long`, `bool` and `Schema` (see Nested schemas below). 
+Supported field types are: `basestring`, `int`, `float`, `datetime`, `long`, `bool`, `Schema` (see Nested schemas below) and `Mixed`. 
+
+#### The "Mixed" type
+The `Mixed` type allows you to indicate that a field supports values of multiple types. Use of this type is generally not encouraged (consistent field typing makes life easier) but is sometimes necessary.
+`Mixed` can be provided as a class to indicate a value of any supported type may be used in a given field:
+```python
+schema = Schema({"misc": {"type": Mixed}})  # all types are valid in this field
+```
+You can also instantiate `Mixed` with a list of sub-types to indicate that a value of one of a subset of supported types may be used in the field:
+```python
+schema = Schema({"external_id": {"type": Mixed(basestring, int, ObjectId)}})  # only basestring, int and ObjectId are supported
+```
+
 If you attempt to save a model containing a value of the wrong type for a given a field a `ValidationException` will be thrown.
 
 ### Mandatory fields
