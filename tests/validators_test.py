@@ -105,7 +105,7 @@ class TestLen(unittest.TestCase):
 
     def test_valid(self):
         self.assertIsNone(self.validator('abc'))
-        self.assertIsNone(self.validator('abcd')
+        self.assertIsNone(self.validator('abcd'))
         self.assertIsNone(self.validator('abcde'))
 
     def test_invalid(self):
