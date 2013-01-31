@@ -2,7 +2,7 @@
 
 Mongothon is a MongoDB object-document mapping API for Python, loosely based on the awesome [mongoose.js](http://mongoosejs.com/) library.
 
-![build status](https://travis-ci.org/tleach/mongothon.png?branch=master "Build status")
+[![build status](https://travis-ci.org/tleach/mongothon.png?branch=master "Build status")](https://travis-ci.org/tleach/mongothon)
 
 # Installation
 
