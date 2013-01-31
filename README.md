@@ -2,6 +2,8 @@
 
 Mongothon is a MongoDB object-document mapping API for Python, loosely based on the awesome [mongoose.js](http://mongoosejs.com/) library.
 
+![build status](https://travis-ci.org/tleach/mongothon.png?branch=master "Build status")
+
 # Installation
 
 Install via easy_install:
@@ -350,5 +352,3 @@ There is no limit to the number of middleware functions which can be registered.
 To run Mongothon's tests, simply run `python setup.py nosetests` at the command line.
 
 All contributions submitted as GitHub pull requests are warmly received.
-
-![build status](https://travis-ci.org/tleach/mongothon.png?branch=master "Build status")
