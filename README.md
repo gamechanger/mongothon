@@ -351,4 +351,4 @@ To run Mongothon's tests, simply run `python setup.py nosetests` at the command 
 
 All contributions submitted as GitHub pull requests are warmly received.
 
-!(https://travis-ci.org/tleach/mongothon.png?branch=master)
+![build status](https://travis-ci.org/tleach/mongothon.png?branch=master "Build status")
