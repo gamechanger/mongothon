@@ -350,3 +350,5 @@ There is no limit to the number of middleware functions which can be registered.
 To run Mongothon's tests, simply run `python setup.py nosetests` at the command line.
 
 All contributions submitted as GitHub pull requests are warmly received.
+
+!(https://travis-ci.org/tleach/mongothon.png?branch=master)
