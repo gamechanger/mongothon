@@ -1,5 +1,4 @@
 from datetime import datetime
-from types import FunctionType
 from inspect import getargspec
 
 
@@ -109,7 +108,7 @@ def _verify_field_spec(spec, path):
             _verify_validator(validates, path)
 
     # Defaults must be of the correct type or a function
-    if 'default' in spec and not (isinstance(spec['default'], field_type) or isinstance(spec['default'], FunctionType)):
+    if 'default' in spec and not (isinstance(spec['default'], field_type) or callable(spec['default'])):
         raise SchemaFormatException("Default value for {0} is not of the nominated type.", path)
 
     # Only expected spec keys are supported
@@ -121,7 +120,7 @@ def _verify_validator(validator, path):
     """Verifies that a given validator associated with the field at the given path is legitimate."""
 
     # Validator should be a function
-    if not isinstance(validator, FunctionType):
+    if not callable(validator):
         raise SchemaFormatException("Invalid validations for {0}", path)
 
     # Validator should accept a single argument
@@ -243,7 +242,7 @@ def _apply_schema_defaults(schema, instance):
         # Apply a default if one is available
         if isinstance(spec, dict) and 'default' in spec:
             default = spec['default']
-            if (isinstance(default, FunctionType)):
+            if callable(default):
                 instance[field] = default()
             else:
                 instance[field] = default
