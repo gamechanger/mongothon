@@ -4,7 +4,7 @@ from mongothon.validators import one_of, lte, gte
 import unittest
 from datetime import datetime
 from sample import blog_post_schema, name_schema, stubnow, valid_doc
-
+from bson.objectid import ObjectId
 
 class TestSchemaVerificationTest(unittest.TestCase):
 
@@ -23,7 +23,7 @@ class TestSchemaVerificationTest(unittest.TestCase):
         self.assert_spec_invalid({"author": {'type':tuple}}, 'author')
 
     def test_supported_types(self):
-        field_types = [basestring, int, long, float, bool, datetime, Mixed, Mixed(int, basestring)]
+        field_types = [ObjectId, basestring, int, long, float, bool, datetime, Mixed, Mixed(int, ObjectId)]
         for field_type in field_types:
             Schema({'some_field': {"type":field_type}}).verify()
             

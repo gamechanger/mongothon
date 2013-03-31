@@ -4,6 +4,7 @@ schemas for use in testing."""
 from mongothon import Schema, Mixed
 from mongothon.validators import one_of
 from datetime import datetime
+from bson.objectid import ObjectId
 
 
 def stubnow():
@@ -35,7 +36,8 @@ blog_post_schema = Schema({
     "creation_date":    {"type": datetime, "default": stubnow},
     "tags":             [basestring],
     "misc":             {"type": Mixed},
-    "linked_id":        {"type": Mixed(int, basestring)}
+    "linked_id":        {"type": Mixed(int, basestring)},
+    "publication_id":   {"type": ObjectId}
 })
 
 

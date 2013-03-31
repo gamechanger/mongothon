@@ -1,6 +1,6 @@
 from datetime import datetime
 from inspect import getargspec
-
+from bson.objectid import ObjectId
 
 
 class Mixed(object):
@@ -29,7 +29,7 @@ class Mixed(object):
                 return True
         return False
 
-SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool, Mixed]
+SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool, Mixed, ObjectId]
 
 def _append_path(prefix, field):
     """Appends the given field to the given path prefix."""
