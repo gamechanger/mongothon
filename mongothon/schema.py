@@ -165,6 +165,12 @@ def _validate_instance_against_schema(instance, schema, errors, path_prefix=''):
                         elif not isinstance(item, spec[0]):
                             errors[instance_path] = "List item is of incorrect type"
 
+    # Now loop over each field in the given instance and make sure we don't
+    # have any fields not declared in the schema.
+    for field in instance:
+        if field not in schema.doc_spec:
+            errors[_append_path(path_prefix, field)] = "Unexpected document field not present in schema"
+
 
 def _validate_value(value, field_spec, path, errors):
     """Validates that the given field value is valid given the associated 
@@ -332,6 +338,10 @@ class Schema(object):
     def __init__(self, doc_spec):
         self._doc_spec = doc_spec
         self._virtuals = {}
+
+        # Every schema should expect an ID field.
+        if '_id' not in self._doc_spec:
+            self._doc_spec['_id'] = {"type": ObjectId}
 
     @property
     def doc_spec(self):

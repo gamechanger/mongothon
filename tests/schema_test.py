@@ -199,8 +199,13 @@ class TestValidation(unittest.TestCase):
         self.assert_document_paths_invalid(self.document, ['tags.3'])
 
     def test_validation_failure(self):
-        self.document['category'] = 'gardening' #invalid category
+        self.document['category'] = 'gardening'  # invalid category
         self.assert_document_paths_invalid(self.document, ['category'])
+
+    def test_disallows_fields_not_in_schema(self):
+        self.document['something'] = "extra"
+        self.assert_document_paths_invalid(self.document, ['something'])
+
 
 
 class TestDefaultApplication(unittest.TestCase):
