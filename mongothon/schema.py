@@ -309,11 +309,11 @@ class VirtualField(object):
 
     def has_getter(self):
         """Returns true if the given virtual field has an associated getter function."""
-        return self._getter != None
+        return self._getter is not None
 
     def has_setter(self):
         """Returns true if the given virtual field has an associated setter function."""
-        return self._setter != None
+        return self._setter is not None
 
     def on_get(self, doc):
         """Applies the registered getter function to the given document using 
