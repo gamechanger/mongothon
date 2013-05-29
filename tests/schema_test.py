@@ -2,6 +2,7 @@ from mongothon import Schema
 from mongothon.schema import ValidationException, SchemaFormatException, Mixed
 from mongothon.validators import one_of, lte, gte
 import unittest
+from mock import patch
 from datetime import datetime
 from sample import blog_post_schema, name_schema, stubnow, valid_doc
 from bson.objectid import ObjectId
@@ -127,9 +128,11 @@ class TestSchemaVerificationTest(unittest.TestCase):
         }).verify()
 
 
-    def test_strict_mode_off_allows_fields_not_in_schema(self):
+    @patch('logging.warning')
+    def test_strict_mode_off_allows_fields_not_in_schema(self, warning):
         schema = Schema({'expected_field': {'type': int}}, strict=False)
         schema.validate({'unexpected_field': 44})
+        warning.assert_called_once_with('Unexpected document field not present in schema: unexpected_field')
 
 
 class TestMixedType(unittest.TestCase):

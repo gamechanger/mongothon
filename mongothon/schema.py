@@ -1,6 +1,7 @@
 from datetime import datetime
 from inspect import getargspec
 from bson.objectid import ObjectId
+import logging
 
 
 class Mixed(object):
@@ -297,10 +298,12 @@ class Schema(object):
         # Now loop over each field in the given instance and make sure we don't
         # have any fields not declared in the schema, unless strict mode has been
         # explicitly disabled.
-        if self._strict:
-            for field in instance:
-                if field not in schema.doc_spec:
+        for field in instance:
+            if field not in schema.doc_spec:
+                if self._strict:
                     errors[self._append_path(path_prefix, field)] = "Unexpected document field not present in schema"
+                else:
+                    logging.warning("Unexpected document field not present in schema: {}".format(self._append_path(path_prefix, field)))
 
 
     def _validate_value(self, value, field_spec, path, errors):
