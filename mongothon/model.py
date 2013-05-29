@@ -67,22 +67,15 @@ def create_model(schema, collection):
             # On successful completion, update from the working copy
             self.populate(working)
 
-        def delete(self, *args, **kwargs):
-            collection.remove(self._id, *args, **kwargs)
-
         @staticmethod
         def insert(*args, **kwargs):
             collection.insert(*args, **kwargs)
 
-        @static_or_instance
         def update(self, *args, **kwargs):
-            if self:
-                return collection.update({"_id": self._id}, *args, **kwargs)
-            return collection.update(*args, **kwargs)
+            return collection.update({"_id": self._id}, *args, **kwargs)
 
-        @staticmethod
-        def remove(*args, **kwargs):
-            collection.remove(*args, **kwargs)
+        def remove(self, *args, **kwargs):
+            collection.remove(self._id, *args, **kwargs)
 
         @staticmethod
         def count():

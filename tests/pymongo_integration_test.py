@@ -62,13 +62,13 @@ class TestPyMongoIntegration(unittest.TestCase):
             except:
                 pass
 
-    def test_delete_document(self):
+    def test_remove_document(self):
         BlogPost(valid_doc()).save()
         BlogPost(valid_doc()).save()
         blog_post = BlogPost(valid_doc())
         blog_post.save()
         with self.assert_difference(blog_post_collection.count, -1):
-            blog_post.delete()
+            blog_post.remove()
 
     def test_update_existing_document(self):
         blog_post = BlogPost(valid_doc())
@@ -101,7 +101,7 @@ class TestPyMongoIntegration(unittest.TestCase):
         posts = BlogPost.find({"likes": {"$gte": 5}})
         self.assertEquals(5, posts.count())
 
-    def test_update_instance(self):
+    def test_update(self):
         other = BlogPost(valid_doc())
         other.save()
         blog_post = BlogPost(valid_doc())
@@ -112,24 +112,10 @@ class TestPyMongoIntegration(unittest.TestCase):
         self.assertEqual(5, reloaded_blog_post.likes)
         self.assertEqual(0, reloaded_other_blog_post.likes)
 
-    def test_update_selection(self):
-        for i in range(10):
-            BlogPost(valid_doc({"likes": i})).save()
-        BlogPost.update(
-            {"likes": {"$gte": 5}}, {"$push": {"tags": "popular"}}, multi=True)
-        self.assertEqual(
-            5, blog_post_collection.find({"tags": "popular"}).count())
-
     def test_count(self):
         for i in range(5):
             BlogPost(valid_doc()).save()
         self.assertEqual(5, BlogPost.count())
-
-    def test_remove_selection(self):
-        for i in range(10):
-            BlogPost(valid_doc({"likes": i})).save()
-        with self.assert_difference(BlogPost.count, -5):
-            BlogPost.remove({"likes": {"$gte": 5}})
 
     def test_find_one(self):
         for i in range(10):

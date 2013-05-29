@@ -24,7 +24,7 @@ car_schema = Schema({
 def set_description(value, doc):
     doc.make, doc.model = value.split(' ')
 
-car_schema.virtual("description", 
+car_schema.virtual("description",
     getter=lambda doc: "%s %s" % (doc.make, doc.model),
     setter=set_description)
 
@@ -145,10 +145,10 @@ class TestModel(unittest.TestCase):
         self.car.save(manipulate=False, safe=True, check_keys=False)
         self.mock_collection.save.assert_called_with(ANY, manipulate=False, safe=True, check_keys=False)
 
-    def test_delete_document(self):
+    def test_remove(self):
         oid = ObjectId()
         self.car._id = oid
-        self.car.delete()
+        self.car.remove()
         self.mock_collection.remove.assert_called_with(oid)
 
     def test_insert(self):
@@ -156,10 +156,6 @@ class TestModel(unittest.TestCase):
         self.mock_collection.insert.assert_called_with(doc)
 
     def test_update(self):
-        self.Car.update({'make': 'Peugeot'}, {'model': '106'}, upsert=True)
-        self.mock_collection.update.assert_called_with({'make': 'Peugeot'}, {'model': '106'}, upsert=True)
-
-    def test_update_instance(self):
         oid = ObjectId()
         self.car._id = oid
         self.car.update({'model': '106'})
