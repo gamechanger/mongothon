@@ -58,9 +58,9 @@ car = new Car({
 car.save()
 ```
 
-Delete a document
+Rermove a document
 ```python
-car.delete()
+car.remove()
 ```
 
 Validate a document
@@ -89,7 +89,7 @@ Each field in a Mongothon schema must be given a type by adding a `"type"` key t
 ```python
 schema = Schema({"name": {"type": basestring}})
 ```
-Supported field types are: `basestring`, `int`, `float`, `datetime`, `long`, `bool`, `Schema` (see Nested schemas below) and `Mixed`. 
+Supported field types are: `basestring`, `int`, `float`, `datetime`, `long`, `bool`, `Schema` (see Nested schemas below) and `Mixed`.
 
 #### The "Mixed" type
 The `Mixed` type allows you to indicate that a field supports values of multiple types. Use of this type is generally not encouraged (consistent field typing makes life easier) but is sometimes necessary.
@@ -125,7 +125,7 @@ schema = Schema({"created_date": {"type": datetime, "default": datetime.now}})
 ```
 
 ### Validation
-Mongothon allows you to specify validation for a field using the `"validates"` key in the field spec. 
+Mongothon allows you to specify validation for a field using the `"validates"` key in the field spec.
 You can specify a single validator:
 ```python
 schema = Schema({"color": {"type": basestring, "validates": one_of("red", "green", "blue")}})
@@ -144,7 +144,7 @@ lte(value)                          # is less than or equal to the given value
 gt(value)                           # is greater than the given value
 lt(value)                           # is less than the given value
 between(min_value, max_value)       # is between the given min and max values
-length(min_length, [max_length])    # is at least the given min length and (optionally) at most the given max length 
+length(min_length, [max_length])    # is at least the given min length and (optionally) at most the given max length
 match(pattern)                      # matches the given regex pattern
 one_of(values...)                   # is equal to one of the given values
 is_url()                            # is a valid URL
@@ -152,7 +152,7 @@ is_email()                          # is a valid email address
 ```
 
 #### Creating custom validators
-In addition to the provided validators it's easy to create your own custom validators. 
+In addition to the provided validators it's easy to create your own custom validators.
 To create a custom validator:
  - declare a function which accepts any arguments you want to provide to the validation algorithm
  - the function should itself return a function which will ultimately be called by Mongothon when validating a field value. The function should:
@@ -172,7 +172,7 @@ schema = Schema({"full_name": {"type": basestring, "validates": startswith("Mr")
 ```
 
 ### Nested schemas
-Schemas may be nested within one another in order to describe the structure of documents containing deep graphs. 
+Schemas may be nested within one another in order to describe the structure of documents containing deep graphs.
 
 Nested can either be declared inline:
 ```python
@@ -186,7 +186,7 @@ blog_post_schema = Schema({
 or declared in isolation and then referenced (and potentially reused between multiple parent schemas):
 ```python
 name_schema = Schema({
-    "first_name":   {"type": basestring}, 
+    "first_name":   {"type": basestring},
     "last_name":    {"type": basestring}
 })
 
@@ -211,7 +211,7 @@ As well as nesting schemas directly under fields, Mongothon supports embedded co
 ```python
 line_item_schema = Schema({
     "price":        {"type": int, "required": True}
-    "item_name":    {"type": basestring, "required": True} 
+    "item_name":    {"type": basestring, "required": True}
 })
 
 order_schema = Schema({
@@ -228,12 +228,12 @@ bookmark_schema = Schema({
 ```
 
 ### Virtual fields
-Mongothon supports defining virtual fields on schemas through the registration of named getter and setter functions.Virtual fields are useful when you want to provide a view over a document's fields without needing to store the derived view as a separate field in the database. 
+Mongothon supports defining virtual fields on schemas through the registration of named getter and setter functions.Virtual fields are useful when you want to provide a view over a document's fields without needing to store the derived view as a separate field in the database.
 
 To declare a virtual field, register a getter and/or setter function on the schema:
 ```python
 name_schema = Schema({
-    "first_name":   {"type": basestring}, 
+    "first_name":   {"type": basestring},
     "last_name":    {"type": basestring}
 })
 
@@ -258,7 +258,7 @@ To create a new model class from an existing schema, use the `create_model` meth
 ```python
 Order = create_model(order_schema, db['orders'])
 ```
-The second argument which must be provided to `create_model` is the PyMongo collection object associated with the underlying MongoDB collection to be associated with the model. 
+The second argument which must be provided to `create_model` is the PyMongo collection object associated with the underlying MongoDB collection to be associated with the model.
 
 ### Class methods
 Model classes provide a number of class methods which can be used to interact with the underlying collection as a whole.
@@ -313,19 +313,19 @@ In order to persist document changes to the DB, the model can be saved:
 ```python
 order.save()
 ```
-Saving an existing, previously loaded document will cause it to be updated. Saving a new document will cause it to be inserted. 
+Saving an existing, previously loaded document will cause it to be updated. Saving a new document will cause it to be inserted.
 In all cases, saving a document results in schema defaults being applied where appropriate and the document being validated before it is saved to the database. In the event of a validation failure `save()` will raise a ValidationException.
 
 #### Deleting documents
-A document may be removed from the underlying collection by calling the `delete()` method on the associated model instance:
+A document may be removed from the underlying collection by calling the `remove()` method on the associated model instance:
 ```python
 order = Order.find_by_id(some_id)
-order.delete()  # document is removed from the DB
+order.remove()  # document is removed from the DB
 ```
 
 ## Middleware
 
-Models allow you to register middleware functions which will be passed flow control at various specific points in the lifecycle of a model. 
+Models allow you to register middleware functions which will be passed flow control at various specific points in the lifecycle of a model.
 
 Currently supported middleware events are:
 
@@ -334,7 +334,7 @@ Currently supported middleware events are:
 `before_validate` - called just before a document is validated
 `after_validate` - called just after a document is validated
 
-In each case the registered middleware function will be passed the document object. 
+In each case the registered middleware function will be passed the document object.
 
 Example:
 ```python
