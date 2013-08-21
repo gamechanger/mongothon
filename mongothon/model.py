@@ -2,7 +2,6 @@ from document import Document
 from copy import deepcopy
 from bson import ObjectId
 from middleware import MiddlewareRegistrar
-from decorators import static_or_instance
 
 def create_model(schema, collection):
 
