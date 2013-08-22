@@ -2,6 +2,8 @@ from document import Document
 from copy import deepcopy
 from bson import ObjectId
 from middleware import MiddlewareRegistrar
+import types
+
 
 def create_model(schema, collection):
 
@@ -120,6 +122,15 @@ def create_model(schema, collection):
             """
             cls.middleware_registrar.register('after_validate', middleware_func)
 
+        @classmethod
+        def class_method(cls, f):
+            """Decorator which dynamically binds class methods to the model for later use."""
+            setattr(cls, f.__name__, types.MethodType(f, cls))
+
+        @classmethod
+        def static_method(cls, f):
+            """Decorator which dynamically binds instance methods to the model."""
+            setattr(cls, f.__name__, f)
 
     class CursorWrapper(object):
         RETURNS_CURSOR = ['rewind', 'clone', 'add_option', 'remove_option',

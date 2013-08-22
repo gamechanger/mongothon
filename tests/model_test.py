@@ -270,3 +270,26 @@ class TestModel(unittest.TestCase):
         self.assertEquals('Volvo', self.car.make)
         self.assertEquals('S60', self.car.model)
 
+    def test_class_method_registration(self):
+        response = Mock()
+
+        @self.Car.class_method
+        def find_by_make(Car, make):
+            self.assertEquals(Car, self.Car)
+            self.assertEquals("Peugeot", make)
+            return response
+
+        self.assertEquals(response, self.Car.find_by_make("Peugeot"))
+
+    def test_instance_method_registration(self):
+        response = Mock()
+
+        @self.Car.static_method
+        def add_option(car, option):
+            self.assertIsInstance(car, self.Car)
+            self.assertEquals(option, "sunroof")
+            return response
+
+        car = self.Car(doc)
+        self.assertEquals(response, car.add_option("sunroof"))
+

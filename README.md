@@ -288,6 +288,18 @@ Order.update({'total_due': {'$gte': '10'}}, {'$unset': {'line_items': 1}})
 Order.count()
 ```
 
+#### Custom class methods
+You can dynamically add custom class methods to your model by using the model's `class_method` decorator function. These are useful for adding custom finder methods to your model:
+
+```python
+@BlogPost.class_method
+def find_by_author(cls, author):
+    return cls.find({"author": author})
+
+posts = BlogPost.find_by_author("Jeff Atwood")
+```
+
+
 ### Instance methods
 Instances of models allow documents to be easily created, manipulated, save and deleted.
 
@@ -322,6 +334,20 @@ A document may be removed from the underlying collection by calling the `remove(
 order = Order.find_by_id(some_id)
 order.remove()  # document is removed from the DB
 ```
+
+#### Custom instance methods
+Custom instance methods can be added to a model using the model's `instance_method` decorator. This comes in useful when you want to wrap up common operations on a document:
+
+```python
+@Order.instance_method
+def add_line_item(self, name, price):
+    self.line_items.append({'item_name': name, 'price': price})
+
+order = Order.find_by_id(some_id)
+order.add_line_item("iPad Mini", 300)
+order.save()
+```
+
 
 ## Middleware
 
