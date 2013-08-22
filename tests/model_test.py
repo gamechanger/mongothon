@@ -5,6 +5,8 @@ from mongothon import Document
 from mongothon import Schema
 from mongothon.validators import one_of
 from bson import ObjectId
+from copy import deepcopy
+
 
 car_schema = Schema({
     "make":                 {"type": basestring, "required": True},
@@ -187,6 +189,18 @@ class TestModel(unittest.TestCase):
         self.assertEquals(doc, loaded_car)
         self.mock_collection.find_one.assert_called_with({'_id': oid})
 
+    def test_reload(self):
+        updated_doc = deepcopy(doc)
+        updated_doc['make'] = 'Volvo'
+        self.mock_collection.find_one.side_effect = [doc, updated_doc]
+        oid = ObjectId()
+        car = self.Car.find_by_id(str(oid))
+        car._id = oid
+        car.reload()
+        self.assertEquals(updated_doc, car)
+        self.mock_collection.find_one.assert_has_calls([
+            call({'_id': oid}), call({'_id': oid})])
+
     def assert_returns_wrapped_cursor(self, attr_name):
         cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
         self.mock_collection.find.return_value = cursor
@@ -292,4 +306,3 @@ class TestModel(unittest.TestCase):
 
         car = self.Car(doc)
         self.assertEquals(response, car.add_option("sunroof"))
-

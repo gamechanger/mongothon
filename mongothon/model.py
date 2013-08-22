@@ -94,6 +94,9 @@ def create_model(schema, collection):
         def find_by_id(cls, id):
             return cls.find_one(cls._id_spec(id))
 
+        def reload(self):
+            self.populate(collection.find_one(self.__class__._id_spec(self._id)))
+
         @classmethod
         def before_save(cls, middleware_func):
             """Registers a middleware function to be run before every instance

@@ -335,6 +335,15 @@ order = Order.find_by_id(some_id)
 order.remove()  # document is removed from the DB
 ```
 
+#### Reload
+You can easily reload a model instance from the database by calling the `reload` method on an instance:
+```python
+order = Order.find_by_id(some_id)
+...
+order.reload()
+```
+
+
 #### Custom instance methods
 Custom instance methods can be added to a model using the model's `instance_method` decorator. This comes in useful when you want to wrap up common operations on a document:
 
