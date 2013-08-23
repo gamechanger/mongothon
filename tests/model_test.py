@@ -241,6 +241,8 @@ class TestModel(unittest.TestCase):
         self.assert_returns_wrapped_cursor('where')
 
     def call_tracker(self, **kwargs):
+        """Groups together mocks for the purpose of tracking the
+        order of calls across all of those mocks."""
         tracker = Mock()
         for key, value in kwargs.iteritems():
             setattr(tracker, key, value)
