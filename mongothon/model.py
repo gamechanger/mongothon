@@ -5,6 +5,39 @@ from middleware import MiddlewareRegistrar
 import types
 
 
+class ScopeBuilder(object):
+    @classmethod
+    def register_fn(cls, f):
+        def inner(self, *args, **kwargs):
+            scope_query = f(*args, **kwargs)
+
+            if not isinstance(scope_query, dict):
+                raise ValueError("Scope {} does not return a query dict".format(f.__name__))
+
+            new_query = deepcopy(self.query)
+            new_query.update(scope_query)
+            return ScopeBuilder(self.model, self.fns, new_query)
+
+        setattr(cls, f.__name__, inner)
+
+
+    def __init__(self, model, fns, query={}):
+        self.fns = fns
+        self.model = model
+        self.query = query
+        for fn in fns:
+            self.register_fn(fn)
+
+    def __getitem__(self, index):
+        if not hasattr(self, "in_progress_cursor"):
+            self.in_progress_cursor = self.execute()
+        return self.in_progress_cursor[index]
+
+
+    def execute(self):
+        return self.model.find(self.query)
+
+
 def create_model(schema, collection):
 
     class Model(Document):
