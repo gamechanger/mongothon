@@ -300,7 +300,7 @@ class TestModel(unittest.TestCase):
     def test_instance_method_registration(self):
         response = Mock()
 
-        @self.Car.static_method
+        @self.Car.instance_method
         def add_option(car, option):
             self.assertIsInstance(car, self.Car)
             self.assertEquals(option, "sunroof")

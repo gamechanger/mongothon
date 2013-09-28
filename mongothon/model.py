@@ -28,7 +28,6 @@ def create_model(schema, collection):
 
         def validate(self):
             """Validates this model against the schema with which is was constructed.
-
             Throws a ValidationException if the document is found to be invalid."""
             self._do_validate(self._create_working())
 
@@ -131,7 +130,7 @@ def create_model(schema, collection):
             setattr(cls, f.__name__, types.MethodType(f, cls))
 
         @classmethod
-        def static_method(cls, f):
+        def instance_method(cls, f):
             """Decorator which dynamically binds instance methods to the model."""
             setattr(cls, f.__name__, f)
 
