@@ -357,7 +357,7 @@ order.add_line_item("iPad Mini", 300)
 order.save()
 ```
 
-## "Scopes" (beta)
+### "Scopes" (beta)
 
 Scopes are a dynamic way of attaching reusable sets of query options to a model which can then be chained together dynamically in order to run actual queries against the model's underlying collection.
 
@@ -375,7 +375,7 @@ def single_item():
 orders = Order.before(datetime(2012, 1, 1)).single_item().execute()
 ```
 
-### Implementing scope functions
+#### Implementing scope functions
 
 A "scope" function is simply a function which returns up to three return values:
  - A query dict
@@ -402,7 +402,7 @@ def by_created_date():
     return {}, {}, {"sort": ["created_date", 1]}
 ```
 
-### Using scopes
+#### Using scopes
 
 Scope functions, once registered to a given model, can be called on the model class to dynamically build up a query context in a chainable manner.
 
@@ -420,7 +420,7 @@ for post in BlogPost.author("bob").id_only():
     # Do something
 ```
 
-## Middleware
+### Middleware
 
 Models allow you to register middleware functions which will be passed flow control at various specific points in the lifecycle of a model.
 
