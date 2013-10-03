@@ -167,6 +167,22 @@ def create_model(schema, collection):
             """Decorator which dynamically binds instance methods to the model."""
             setattr(cls, f.__name__, f)
 
+        @classmethod
+        def scope(cls, f):
+            if not hasattr(cls, "scopes"):
+                cls.scopes = []
+
+            cls.scopes.append(f)
+
+            def create_builder(self, *args, **kwargs):
+                bldr = ScopeBuilder(cls, cls.scopes)
+                return getattr(bldr, f.__name__)(*args, **kwargs)
+
+            setattr(cls, f.__name__, types.MethodType(create_builder, cls))
+
+
+
+
     class CursorWrapper(object):
         RETURNS_CURSOR = ['rewind', 'clone', 'add_option', 'remove_option',
                           'limit', 'batch_size', 'skip', 'max_scan', 'sort',

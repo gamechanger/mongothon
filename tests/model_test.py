@@ -310,20 +310,24 @@ class TestModel(TestCase):
         car = self.Car(doc)
         self.assertEquals(response, car.add_option("sunroof"))
 
-    # def test_single_scope(self):
+    def test_scope_query(self):
+        @self.Car.scope
+        def with_ac(available=True):
+            return {"trim.ac": available}
 
-    #     @self.Car.scope
-    #     def with_ac(available=True):
-    #         return {"trim.ac": available}
+        @self.Car.scope
+        def hatchback():
+            return {"trim.doors": {"$in": [3, 5]}}
 
-    #     cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
-    #     self.mock_collection.find.return_value = cursor
-    #     cars = self.Car.with_ac()
-    #     self.assertIsInstance(cars[0], self.Car)
-    #     self.mock_collection.find.assert_called_once_with({"trim.ac": True})
-    #     self.assertEqual(2, cars.count())
-    #     for car in cars:
-    #         self.assertIsInstance(car, self.Car)
+        cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
+        self.mock_collection.find.return_value = cursor
+        cars = self.Car.hatchback().with_ac().execute()
+        self.assertIsInstance(cars[0], self.Car)
+        self.mock_collection.find.assert_called_once_with(
+            {"trim.ac": True, "trim.doors": {"$in": [3, 5]}})
+        self.assertEqual(2, cars.count())
+        for car in cars:
+            self.assertIsInstance(car, self.Car)
 
 
 class TestScopeBuilder(TestCase):
