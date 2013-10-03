@@ -357,6 +357,68 @@ order.add_line_item("iPad Mini", 300)
 order.save()
 ```
 
+## "Scopes" (beta)
+
+Scopes are a dynamic way of attaching reusable sets of query options to a model which can then be chained together dynamically in order to run actual queries against the model's underlying collection.
+
+For example:
+```python
+@Order.scope
+def before(date):
+    return {"created_date": {"$lt": date}}
+
+@Order.scope
+def single_item():
+    return {"items": {"$size": 1}}
+
+# Obtains a list of orders which were created before 20120101 which have a single line item.
+orders = Order.before(datetime(2012, 1, 1)).single_item().execute()
+```
+
+### Implementing scope functions
+
+A "scope" function is simply a function which returns up to three return values:
+ - A query dict
+ - A projection dict
+ - An options dict, containing a list of kwargs suitable for passing to PyMongo's `find` method.
+
+A scope is registered with a given model by using the model's `scope` decorator.
+
+Some example scopes:
+```python
+@BlogPost.scope
+def author(name):
+    """A scope which restricts the query to only blog posts by the given author"""
+    return {"name": name}
+
+@BlogPost.scope
+def id_only():
+    """Only return the ID from the query"""
+    return {}, {"_id": 1}
+
+@BlogPost.scope
+def by_created_date():
+    """Sorts the query results by created date"""
+    return {}, {}, {"sort": ["created_date", 1]}
+```
+
+### Using scopes
+
+Scope functions, once registered to a given model, can be called on the model class to dynamically build up a query context in a chainable manner.
+
+Once the query context has been built it can be executed as an actual query against the database by calling `execute()`.
+
+```python
+# Finds all BlogPosts with a given author, only returning their IDs
+posts = BlogPost.author("bob").id_only().execute()
+```
+
+The builder API which allows scopes to be chained together in this manner also implements a Python iterator which will call `execute()` behind the scenes if you attempt to index into it:
+
+```python
+for post in BlogPost.author("bob").id_only():
+    # Do something
+```
 
 ## Middleware
 
