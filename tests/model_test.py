@@ -317,14 +317,16 @@ class TestModel(TestCase):
 
         @self.Car.scope
         def hatchback():
-            return {"trim.doors": {"$in": [3, 5]}}
+            return {"trim.doors": {"$in": [3, 5]}}, {}, {"sort": [("make", -1)]}
 
         cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
         self.mock_collection.find.return_value = cursor
         cars = self.Car.hatchback().with_ac().execute()
         self.assertIsInstance(cars[0], self.Car)
         self.mock_collection.find.assert_called_once_with(
-            {"trim.ac": True, "trim.doors": {"$in": [3, 5]}})
+            {"trim.ac": True, "trim.doors": {"$in": [3, 5]}},
+            {},
+            sort=[("make", -1)])
         self.assertEqual(2, cars.count())
         for car in cars:
             self.assertIsInstance(car, self.Car)
@@ -358,6 +360,22 @@ class TestScopeBuilder(TestCase):
         self.assertEquals({"thing": "blah"}, bldr2.query)
 
 
+    def test_scope_builder_with_projection_and_options(self):
+        mock_model = Mock()
+
+        def sample_scope():
+            return ({"thing": "blah"},
+                    {"thing": 1, "other": 1},
+                    {"limit": 5})
+
+        bldr = ScopeBuilder(mock_model, [sample_scope]).sample_scope()
+        self.assertIsInstance(bldr, ScopeBuilder)
+        self.assertEquals({"thing": "blah"}, bldr.query)
+        self.assertEquals({"thing": 1, "other": 1}, bldr.projection)
+        self.assertEquals({"limit": 5}, bldr.options)
+
+
+
     def test_chained_scope_query_building(self):
         mock_model = Mock()
 
@@ -365,28 +383,29 @@ class TestScopeBuilder(TestCase):
             return {"thing": "blah"}
 
         def scope_b():
-            return {"woo": "ha"}
+            return {"woo": "ha"}, {"ezy": "e"}
 
         bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
         bldr = bldr.scope_a().scope_b()
         self.assertEquals({"thing": "blah", "woo": "ha"},
                           bldr.query)
+        self.assertEquals({"ezy": "e"}, bldr.projection)
 
 
     def test_last_query_wins_in_chained_scopes(self):
         mock_model = Mock()
 
         def scope_a():
-            return {"thing": "blah"}
+            return {"thing": "blah"}, {}, {"limit": 5}
 
         def scope_b():
-            return {"thing": "pish"}
+            return {"thing": "pish"}, {}, {"limit": 10}
 
         bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
         bldr = bldr.scope_a().scope_b()
         self.assertEquals({"thing": "pish"},
                           bldr.query)
-
+        self.assertEquals({"limit": 10}, bldr.options)
 
     def test_calls_back_to_model_on_execute(self):
         mock_model = Mock()
@@ -394,14 +413,17 @@ class TestScopeBuilder(TestCase):
         mock_model.find.return_value = cursor
 
         def scope_a():
-            return {"thing": "blah"}
+            return {"thing": "blah"}, {}, {"sort": True}
 
         def scope_b():
-            return {"woo": "ha"}
+            return {"woo": "ha"}, {"icecube": 1}
 
         bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
         results = bldr.scope_a().scope_b().execute()
-        mock_model.find.assert_called_once_with({"thing": "blah", "woo": "ha"})
+        mock_model.find.assert_called_once_with(
+            {"thing": "blah", "woo": "ha"},
+            {"icecube": 1},
+            sort=True)
         self.assertEquals(cursor, results)
 
 
@@ -422,10 +444,41 @@ class TestScopeBuilder(TestCase):
             count += 1
 
         self.assertEquals(2, count)
-        mock_model.find.assert_called_once_with({"thing": "blah", "woo": "ha"})
+        mock_model.find.assert_called_once_with(
+            {"thing": "blah", "woo": "ha"},
+            {})
 
 
+    def test_unpack_scope_with_just_query(self):
+        bldr = ScopeBuilder(Mock(), [])
+        query, projection, options = bldr.unpack_scope({"thing": "blah"})
+        self.assertEqual({"thing": "blah"}, query)
+        self.assertEqual({}, projection)
+        self.assertEqual({}, options)
 
+    def test_unpack_scope_with_query_and_projection(self):
+        bldr = ScopeBuilder(Mock(), [])
+        query, projection, options = bldr.unpack_scope(({"thing": "blah"}, {"thing": 1}))
+        self.assertEqual({"thing": "blah"}, query)
+        self.assertEqual({"thing": 1}, projection)
+        self.assertEqual({}, options)
 
+    def test_unpack_scope_with_all_options(self):
+        bldr = ScopeBuilder(Mock(), [])
+        query, projection, options = bldr.unpack_scope(({"thing": "blah"}, {"thing": 1}, {"limit": 5}))
+        self.assertEqual({"thing": "blah"}, query)
+        self.assertEqual({"thing": 1}, projection)
+        self.assertEqual({"limit": 5}, options)
 
+    def test_unpack_scope_missing_no_data(self):
+        bldr = ScopeBuilder(Mock(), [])
+
+        with self.assertRaises(ValueError):
+            bldr.unpack_scope(None)
+
+    def test_unpack_scope_too_many_args(self):
+        bldr = ScopeBuilder(Mock(), [])
+
+        with self.assertRaises(ValueError):
+            bldr.unpack_scope(({}, {}, {}, {}))
 
