@@ -411,6 +411,24 @@ Order.after_save(log_saved)
 There is no limit to the number of middleware functions which can be registered.
 
 
+### Model State
+
+Mongothon models provide a few handy methods which let you determine the document's current persistence state:
+
+```python
+post = BlogPost()
+assert post.is_new()
+
+post.save()
+assert not post.is_new()
+assert post.is_persisted()
+
+post.remove()
+assert not post.is_new()
+assert not post.is_persisted()
+assert port.is_deleted()
+```
+
 # Developing and Contributing
 
 To run Mongothon's tests, simply run `python setup.py nosetests` at the command line.

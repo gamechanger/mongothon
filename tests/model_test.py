@@ -96,6 +96,11 @@ class TestModel(TestCase):
         self.Car = create_model(car_schema, self.mock_collection)
         self.car = self.Car(doc)
 
+    def assert_predicates(self, model, is_new=False, is_persisted=False, is_deleted=False):
+        self.assertEquals(is_new, model.is_new())
+        self.assertEquals(is_persisted, model.is_persisted())
+        self.assertEquals(is_deleted, model.is_deleted())
+
     def test_can_be_treated_as_a_dict(self):
         self.assertIsInstance(self.car, dict)
         self.car['make'] = 'volvo'
@@ -105,6 +110,9 @@ class TestModel(TestCase):
         self.assertIsInstance(self.car, Document)
         self.car['make'] = 'volvo'
         self.assertEquals('volvo', self.car['make'])
+
+    def test_instantiate(self):
+        self.assert_predicates(self.car, is_new=True)
 
     def test_validation_of_valid_doc(self):
         self.car.validate()
@@ -141,11 +149,16 @@ class TestModel(TestCase):
         self.car.save(manipulate=False, safe=True, check_keys=False)
         self.mock_collection.save.assert_called_with(ANY, manipulate=False, safe=True, check_keys=False)
 
+    def test_save_changes_state_to_persisted(self):
+        self.car.save()
+        self.assert_predicates(self.car, is_persisted=True)
+
     def test_remove(self):
         oid = ObjectId()
         self.car['_id'] = oid
         self.car.remove()
         self.mock_collection.remove.assert_called_with(oid)
+        self.assert_predicates(self.car, is_deleted=True)
 
     def test_insert(self):
         self.Car.insert(doc)
@@ -154,7 +167,9 @@ class TestModel(TestCase):
     def test_update(self):
         oid = ObjectId()
         self.car['_id'] = oid
+        self.car.save()
         self.car.update({'model': '106'})
+        self.assert_predicates(self.car, is_persisted=True)
         self.mock_collection.update.assert_called_with(
             {'_id': oid}, {'model': '106'})
 
@@ -166,6 +181,7 @@ class TestModel(TestCase):
         self.mock_collection.find_one.return_value = doc
         loaded_car = self.Car.find_one({'make': 'Peugeot'})
         self.assertEquals(doc, loaded_car)
+        self.assert_predicates(loaded_car, is_persisted=True)
         self.mock_collection.find_one.assert_called_with({'make': 'Peugeot'})
 
     def test_find(self):
@@ -175,6 +191,7 @@ class TestModel(TestCase):
         self.assertIsInstance(cars[0], self.Car)
         self.assertEqual(2, cars.count())
         for car in cars:
+            self.assert_predicates(car, is_persisted=True)
             self.assertIsInstance(car, self.Car)
 
     def test_find_by_id(self):
@@ -182,6 +199,7 @@ class TestModel(TestCase):
         oid = ObjectId()
         loaded_car = self.Car.find_by_id(str(oid))
         self.assertEquals(doc, loaded_car)
+        self.assert_predicates(loaded_car, is_persisted=True)
         self.mock_collection.find_one.assert_called_with({'_id': oid})
 
     def test_reload(self):
