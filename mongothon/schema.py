@@ -66,49 +66,6 @@ class ValidationException(Exception):
         return repr(self._errors)
 
 
-class VirtualField(object):
-    """Encapsulates a named virtual field associated with a Schema,
-    with methods to register and apply getters and setters."""
-
-    def get(self, fn):
-        """Registers a getter function with this virtual field. The getter
-        function should expect to receive a document structure which matches the
-        enclosing schema and should return the value of the virtual field
-        derived from this document."""
-        (args, varargs, keywords, defaults) = getargspec(fn)
-        if len(args) != 1:
-            raise ValueError('Virtual field getters take 1 argument only')
-
-        self._getter = fn
-
-    def set(self, fn):
-        """Register a setter function with this virtual field. The setter
-        should expect to be passed the value being set and the document to
-        which it suould be applied."""
-        (args, varargs, keywords, defaults) = getargspec(fn)
-        if len(args) != 2:
-            raise ValueError('Virtual field getters take 2 arguments only')
-
-        self._setter = fn
-
-    def has_getter(self):
-        """Returns true if the given virtual field has an associated getter function."""
-        return self._getter is not None
-
-    def has_setter(self):
-        """Returns true if the given virtual field has an associated setter function."""
-        return self._setter is not None
-
-    def on_get(self, doc):
-        """Applies the registered getter function to the given document using
-        the and return the calculated value."""
-        return self._getter(doc)
-
-    def on_set(self, value, doc):
-        """Applies the given value to the given document using the registered
-        setter."""
-        return self._setter(value, doc)
-
 
 class Schema(object):
     """A Schema encapsulates the structure and constraints of a Mongo document."""
@@ -142,24 +99,6 @@ class Schema(object):
 
         if len(errors) > 0:
             raise ValidationException(errors)
-
-    def virtual(self, field_name, getter=None, setter=None):
-        """Allows a virtual field definition to be provided."""
-        if not field_name in self._virtuals:
-            self._virtuals[field_name] = VirtualField()
-
-        virtual_field = self._virtuals[field_name]
-
-        if getter:
-            virtual_field.get(getter)
-        if setter:
-            virtual_field.set(setter)
-
-        return virtual_field
-
-    @property
-    def virtuals(self):
-        return self._virtuals
 
     def _append_path(self, prefix, field):
         """Appends the given field to the given path prefix."""

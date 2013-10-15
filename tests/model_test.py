@@ -24,13 +24,6 @@ car_schema = Schema({
     "options": [basestring]
 })
 
-def set_description(value, doc):
-    doc.make, doc.model = value.split(' ')
-
-car_schema.virtual("description",
-    getter=lambda doc: "%s %s" % (doc.make, doc.model),
-    setter=set_description)
-
 
 doc = {
     "make":     "Peugeot",
@@ -111,38 +104,38 @@ class TestModel(TestCase):
     def test_can_be_treated_as_a_document(self):
         self.assertIsInstance(self.car, Document)
         self.car['make'] = 'volvo'
-        self.assertEquals('volvo', self.car.make)
+        self.assertEquals('volvo', self.car['make'])
 
     def test_validation_of_valid_doc(self):
         self.car.validate()
 
     def test_validation_respects_defaults(self):
         # this would cause validation to fail without a default being applied
-        del self.car.trim['doors']
+        del self.car['trim']['doors']
         self.car.validate()
 
     def test_validation_does_not_apply_defaults_to_instance(self):
-        del self.car.trim['doors']
+        del self.car['trim']['doors']
         self.car.validate()
-        self.assertFalse('doors' in self.car.trim)
+        self.assertFalse('doors' in self.car['trim'])
 
     def test_apply_defaults(self):
-        del self.car.trim['doors']
+        del self.car['trim']['doors']
         self.car.apply_defaults()
-        self.assertEquals(4, self.car.trim.doors)
+        self.assertEquals(4, self.car['trim']['doors'])
 
     def test_save_applies_defaults(self):
-        del self.car.trim['doors']
+        del self.car['trim']['doors']
         self.car.save()
-        self.assertEqual(4, self.car.trim.doors)
+        self.assertEqual(4, self.car['trim']['doors'])
 
     def test_save_rolls_back_defaults_if_save_fails(self):
-        del self.car.trim['doors']
+        del self.car['trim']['doors']
         self.mock_collection.save = Mock(side_effect=Exception('IO error'))
         try:
             self.car.save()
         except:
-            self.assertFalse('doors' in self.car.trim)
+            self.assertFalse('doors' in self.car['trim'])
 
     def test_save_passes_arguments_to_collection(self):
         self.car.save(manipulate=False, safe=True, check_keys=False)
@@ -150,7 +143,7 @@ class TestModel(TestCase):
 
     def test_remove(self):
         oid = ObjectId()
-        self.car._id = oid
+        self.car['_id'] = oid
         self.car.remove()
         self.mock_collection.remove.assert_called_with(oid)
 
@@ -160,9 +153,10 @@ class TestModel(TestCase):
 
     def test_update(self):
         oid = ObjectId()
-        self.car._id = oid
+        self.car['_id'] = oid
         self.car.update({'model': '106'})
-        self.mock_collection.update.assert_called_with({'_id': oid}, {'model': '106'})
+        self.mock_collection.update.assert_called_with(
+            {'_id': oid}, {'model': '106'})
 
     def test_count(self):
         self.mock_collection.count.return_value = 45
@@ -196,7 +190,7 @@ class TestModel(TestCase):
         self.mock_collection.find_one.side_effect = [doc, updated_doc]
         oid = ObjectId()
         car = self.Car.find_by_id(str(oid))
-        car._id = oid
+        car['_id'] = oid
         car.reload()
         self.assertEquals(updated_doc, car)
         self.mock_collection.find_one.assert_has_calls([
@@ -279,13 +273,6 @@ class TestModel(TestCase):
         self.car.validate()
         self.assertEquals([call.validate(self.car), call.middleware(self.car)], tracker.mock_calls)
 
-    def test_virtual_field_getter(self):
-        self.assertEquals('Peugeot 406', self.car.description)
-
-    def test_virtual_field_setter(self):
-        self.car.description = "Volvo S60"
-        self.assertEquals('Volvo', self.car.make)
-        self.assertEquals('S60', self.car.model)
 
     def test_class_method_registration(self):
         response = Mock()
