@@ -2,7 +2,7 @@ from mongothon import Document
 import unittest
 
 class TestDocument(unittest.TestCase):
-    
+
     def _get_document(self):
         spec = {
             "author": "John Humphreys",
@@ -30,7 +30,7 @@ class TestDocument(unittest.TestCase):
     def test_create_with_invalid_key_names(self):
         with self.assertRaises(Exception):
             Document({'contains space': 34})
-        
+
         with self.assertRaises(Exception):
             Document({'': 45})
 
@@ -38,14 +38,4 @@ class TestDocument(unittest.TestCase):
         document = self._get_document()
         self.assertIsInstance(document['content'], Document)
         self.assertIsInstance(document['comments'][0], Document)
-
-    def test_provides_attribute_getters(self):
-        document = self._get_document()
-        self.assertEqual("cooking", document.category)
-        self.assertEqual("Julio Cesar", document.comments[0].commenter)
-
-    def test_provides_attribute_setters(self):
-        document = self._get_document()
-        document.category = "baking"
-        self.assertEqual("baking", document['category'])
 

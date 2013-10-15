@@ -14,7 +14,7 @@ class Document(dict):
         for key, value in from_dict.iteritems():
             # All document keys must be strings containing valid javascript identifier
             if not valid_key.match(key):
-                raise ValueError("Document property {0} is improperly named.".format(key)) 
+                raise ValueError("Document property {0} is improperly named.".format(key))
 
             if isinstance(value, dict):
                 self[key] = Document(value)
@@ -28,12 +28,5 @@ class Document(dict):
                         self[key].append(item)
 
             else:
-                self[key] = value        
+                self[key] = value
 
-    def __getattr__(self, name):
-        if name in self:
-            return self[name]
-        raise AttributeError("{0} is not found".format(name))
-
-    def __setattr__(self, name, value):
-        self[name] = value

@@ -47,11 +47,11 @@ class TestPyMongoIntegration(unittest.TestCase):
         blog_post = BlogPost(valid_doc())
         with self.assert_difference(blog_post_collection.count, 1):
             blog_post.save()
-        self.assertIsNotNone(blog_post._id)
+        self.assertIsNotNone(blog_post['_id'])
 
-        reloaded_blog_post = BlogPost.find_by_id(blog_post._id)
+        reloaded_blog_post = BlogPost.find_by_id(blog_post['_id'])
         self.assertDictEqual(
-            expected_db_doc(blog_post._id), reloaded_blog_post)
+            expected_db_doc(blog_post['_id']), reloaded_blog_post)
 
     def test_does_not_persist_invalid_document(self):
         blog_post = BlogPost(valid_doc())
@@ -73,12 +73,12 @@ class TestPyMongoIntegration(unittest.TestCase):
     def test_update_existing_document(self):
         blog_post = BlogPost(valid_doc())
         blog_post.save()
-        blog_post.author.first = "Troy"
+        blog_post['author']['first'] = "Troy"
         with self.assert_no_difference(blog_post_collection.count):
             blog_post.save()
         # Reload to check the change is there
-        reloaded_blog_post = BlogPost.find_by_id(blog_post._id)
-        expected = expected_db_doc(blog_post._id)
+        reloaded_blog_post = BlogPost.find_by_id(blog_post['_id'])
+        expected = expected_db_doc(blog_post['_id'])
         expected['author']['first'] = u"Troy"
         self.assertDictEqual(
             expected, reloaded_blog_post)
@@ -107,10 +107,10 @@ class TestPyMongoIntegration(unittest.TestCase):
         blog_post = BlogPost(valid_doc())
         blog_post.save()
         blog_post.update({"likes": 5})
-        reloaded_blog_post = BlogPost.find_by_id(blog_post._id)
-        reloaded_other_blog_post = BlogPost.find_by_id(other._id)
-        self.assertEqual(5, reloaded_blog_post.likes)
-        self.assertEqual(0, reloaded_other_blog_post.likes)
+        reloaded_blog_post = BlogPost.find_by_id(blog_post['_id'])
+        reloaded_other_blog_post = BlogPost.find_by_id(other['_id'])
+        self.assertEqual(5, reloaded_blog_post['likes'])
+        self.assertEqual(0, reloaded_other_blog_post['likes'])
 
     def test_count(self):
         for i in range(5):

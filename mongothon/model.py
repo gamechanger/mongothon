@@ -116,16 +116,6 @@ def create_model(schema, collection):
             """Apply schema defaults to this document."""
             schema.apply_defaults(self)
 
-        def __getattr__(self, name):
-            if name in schema.virtuals:
-                return schema.virtuals[name].on_get(self)
-            return super(Model, self).__getattr__(name)
-
-        def __setattr__(self, name, value):
-            if name in schema.virtuals:
-                schema.virtuals[name].on_set(value, self)
-            super(Model, self).__setattr__(name, value)
-
         def save(self, *args, **kwargs):
             # Create a working copy of ourselves and validate it
             working = self._create_working()
@@ -148,10 +138,10 @@ def create_model(schema, collection):
             collection.insert(*args, **kwargs)
 
         def update(self, *args, **kwargs):
-            return collection.update({"_id": self._id}, *args, **kwargs)
+            return collection.update({"_id": self['_id']}, *args, **kwargs)
 
         def remove(self, *args, **kwargs):
-            collection.remove(self._id, *args, **kwargs)
+            collection.remove(self['_id'], *args, **kwargs)
 
         @staticmethod
         def count():
@@ -170,7 +160,7 @@ def create_model(schema, collection):
             return cls.find_one(cls._id_spec(id))
 
         def reload(self):
-            self.populate(collection.find_one(self.__class__._id_spec(self._id)))
+            self.populate(collection.find_one(self.__class__._id_spec(self['_id'])))
 
         @classmethod
         def before_save(cls, middleware_func):
