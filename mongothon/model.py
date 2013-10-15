@@ -5,6 +5,13 @@ from middleware import MiddlewareRegistrar
 import types
 
 
+class ModelState:
+    """Valid lifecycle states which a given Model instance may occupy."""
+    NEW = 1
+    PERSISTED = 2
+    DELETED = 3
+
+
 class ScopeBuilder(object):
     """A helper class used to build query scopes. This class is provided with a
     list of scope functions (all of which return query args) which can then
@@ -86,6 +93,10 @@ def create_model(schema, collection):
     class Model(Document):
         middleware_registrar = MiddlewareRegistrar()
 
+        def __init__(self, inital_doc=None, initial_state=ModelState.NEW):
+            self._state = initial_state
+            super(Model, self).__init__(inital_doc)
+
         def _create_working(self):
             working = deepcopy(self)
             schema.apply_defaults(working)
@@ -101,6 +112,19 @@ def create_model(schema, collection):
         @classmethod
         def _id_spec(cls, id):
             return {'_id': cls._ensure_object_id(id)}
+
+        def is_new(self):
+            """Returns true if the current model instance is new and has yet to be
+            persisted to the underlying Mongo collection."""
+            return self._state == ModelState.NEW
+
+        def is_persisted(self):
+            """Returns true if the model instance exists in the database."""
+            return self._state == ModelState.PERSISTED
+
+        def is_deleted(self):
+            """Returns true if the model instance was deleted from the database."""
+            return self._state == ModelState.DELETED
 
         def validate(self):
             """Validates this model against the schema with which is was constructed.
@@ -126,6 +150,7 @@ def create_model(schema, collection):
 
             # Attempt to save
             collection.save(working, *args, **kwargs)
+            self._state = ModelState.PERSISTED
 
             # Apply after save middleware
             Model.middleware_registrar.apply('after_save', working)
@@ -142,6 +167,7 @@ def create_model(schema, collection):
 
         def remove(self, *args, **kwargs):
             collection.remove(self['_id'], *args, **kwargs)
+            self._state = ModelState.DELETED
 
         @staticmethod
         def count():
@@ -149,7 +175,8 @@ def create_model(schema, collection):
 
         @classmethod
         def find_one(cls, *args, **kwargs):
-            return cls(collection.find_one(*args, **kwargs))
+            return cls(collection.find_one(*args, **kwargs),
+                       initial_state=ModelState.PERSISTED)
 
         @staticmethod
         def find(*args, **kwargs):
@@ -226,7 +253,7 @@ def create_model(schema, collection):
             self._wrapped = wrapped_cursor
 
         def __getitem__(self, index):
-            return Model(self._wrapped[index])
+            return Model(self._wrapped[index], initial_state=ModelState.PERSISTED)
 
         def __getattr__(self, name):
             attr = getattr(self._wrapped, name)
