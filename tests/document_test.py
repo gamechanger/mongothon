@@ -27,12 +27,6 @@ class TestDocument(unittest.TestCase):
 
         return Document(spec)
 
-    def test_create_with_invalid_key_names(self):
-        with self.assertRaises(Exception):
-            Document({'contains space': 34})
-
-        with self.assertRaises(Exception):
-            Document({'': 45})
 
     def test_creates_nested_document_tree(self):
         document = self._get_document()

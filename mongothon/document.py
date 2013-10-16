@@ -1,7 +1,3 @@
-import re
-
-valid_key = re.compile('^[\$A-Za-z_][0-9A-Za-z_\$]*$')
-
 class Document(dict):
     def __init__(self, initial=None):
         if initial:
@@ -12,10 +8,6 @@ class Document(dict):
 
         self.clear()
         for key, value in from_dict.iteritems():
-            # All document keys must be strings containing valid javascript identifier
-            if not valid_key.match(key):
-                raise ValueError("Document property {0} is improperly named.".format(key))
-
             if isinstance(value, dict):
                 self[key] = Document(value)
 
