@@ -1,44 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Mongothon by tleach</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/respond.js"></script>
+    <link href='https://fonts.googleapis.com/css?family=Chivo:900' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
     <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <!--[if lt IE 8]>
-    <link rel="stylesheet" href="stylesheets/ie.css">
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-
+    <title>Mongothon by tleach</title>
   </head>
+
   <body>
-      <div id="header">
-        <nav>
-          <li class="fork"><a href="https://github.com/tleach/mongothon">View On GitHub</a></li>
-          <li class="downloads"><a href="https://github.com/tleach/mongothon/zipball/master">ZIP</a></li>
-          <li class="downloads"><a href="https://github.com/tleach/mongothon/tarball/master">TAR</a></li>
-          <li class="title">DOWNLOADS</li>
-        </nav>
-      </div><!-- end header -->
+    <div id="container">
+      <div class="inner">
 
-    <div class="wrapper">
-
-      <section>
-        <div id="title">
+        <header>
           <h1>Mongothon</h1>
-          <p>A lightweight Mongo object-document mapping abstraction layer over PyMongo</p>
-          <hr>
-          <span class="credits left">Project maintained by <a href="https://github.com/tleach">tleach</a></span>
-          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
-        </div>
+          <h2>A lightweight Mongo object-document mapping abstraction layer over PyMongo</h2>
+        </header>
 
-        <h1>
+        <section id="downloads" class="clearfix">
+          <a href="https://github.com/tleach/mongothon/zipball/master" id="download-zip" class="button"><span>Download .zip</span></a>
+          <a href="https://github.com/tleach/mongothon/tarball/master" id="download-tar-gz" class="button"><span>Download .tar.gz</span></a>
+          <a href="https://github.com/tleach/mongothon" id="view-on-github" class="button"><span>View on GitHub</span></a>
+        </section>
+
+        <hr>
+
+        <section id="main_content">
+          <h1>
 <a name="mongothon" class="anchor" href="#mongothon"><span class="octicon octicon-link"></span></a>Mongothon</h1>
 
 <p>Mongothon is a MongoDB object-document mapping API for Python, loosely based on the awesome <a href="http://mongoosejs.com/">mongoose.js</a> library.</p>
@@ -76,11 +69,6 @@
 <span class="p">})</span>
 </pre></div>
 
-<p>Define a virtual field on the schema:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">car_schema</span><span class="o">.</span><span class="n">virtual</span><span class="p">(</span><span class="s">"description"</span><span class="p">,</span> <span class="n">getter</span><span class="o">=</span><span class="k">lambda</span> <span class="n">doc</span><span class="p">:</span> <span class="s">"{0} {1}"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">make</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">model</span><span class="p">))</span>
-</pre></div>
-
 <p>Generate a reusable model class from the Schema and pymongo collection:</p>
 
 <div class="highlight highlight-python"><pre><span class="n">Car</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span><span class="n">car_schema</span><span class="p">,</span> <span class="n">db</span><span class="p">[</span><span class="s">'car'</span><span class="p">])</span>
@@ -89,7 +77,7 @@
 <p>Find, modify and save a document:</p>
 
 <div class="highlight highlight-python"><pre><span class="n">car</span> <span class="o">=</span> <span class="n">Car</span><span class="o">.</span><span class="n">find_by_id</span><span class="p">(</span><span class="n">some_id</span><span class="p">)</span>
-<span class="n">car</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="s">"green"</span>
+<span class="n">car</span><span class="p">[</span><span class="s">'color'</span><span class="p">]</span> <span class="o">=</span> <span class="s">"green"</span>
 <span class="n">car</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 </pre></div>
 
@@ -103,7 +91,7 @@
 <span class="n">car</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 </pre></div>
 
-<p>Rermove a document</p>
+<p>Remove a document</p>
 
 <div class="highlight highlight-python"><pre><span class="n">car</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
 </pre></div>
@@ -303,31 +291,6 @@ is used.</p>
 <span class="p">})</span>
 </pre></div>
 
-<h3>
-<a name="virtual-fields" class="anchor" href="#virtual-fields"><span class="octicon octicon-link"></span></a>Virtual fields</h3>
-
-<p>Mongothon supports defining virtual fields on schemas through the registration of named getter and setter functions.Virtual fields are useful when you want to provide a view over a document's fields without needing to store the derived view as a separate field in the database.</p>
-
-<p>To declare a virtual field, register a getter and/or setter function on the schema:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">name_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
-    <span class="s">"first_name"</span><span class="p">:</span>   <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">},</span>
-    <span class="s">"last_name"</span><span class="p">:</span>    <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">}</span>
-<span class="p">})</span>
-
-<span class="k">def</span> <span class="nf">get_full_name</span><span class="p">(</span><span class="n">doc</span><span class="p">):</span>
-    <span class="k">return</span> <span class="s">"</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">first_name</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">last_name</span><span class="p">)</span>
-
-<span class="k">def</span> <span class="nf">set_full_name</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
-    <span class="n">doc</span><span class="o">.</span><span class="n">first_name</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">last_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">" "</span><span class="p">)</span>
-
-<span class="n">name_schema</span><span class="o">.</span><span class="n">virtual</span><span class="p">(</span><span class="s">"full_name"</span><span class="p">,</span> <span class="n">getter</span><span class="o">=</span><span class="n">get_full_name</span><span class="p">,</span> <span class="n">setter</span><span class="o">=</span><span class="n">set_full_name</span><span class="p">)</span>
-</pre></div>
-
-<p>Getter functions receive the document as the one and only argument and should return the value of the virtual field for that document.</p>
-
-<p>Setter functions receive the value being set and destination document as arguments. The setter should update the document as appropriate from the given value.</p>
-
 <h2>
 <a name="models" class="anchor" href="#models"><span class="octicon octicon-link"></span></a>Models</h2>
 
@@ -409,14 +372,6 @@ is used.</p>
     <span class="p">],</span>
     <span class="s">"total_due"</span><span class="p">:</span> <span class="mi">700</span>
 <span class="p">})</span>
-</pre></div>
-
-<h4>
-<a name="manipulating-documents" class="anchor" href="#manipulating-documents"><span class="octicon octicon-link"></span></a>Manipulating documents</h4>
-
-<p>Document fields can be updated via model instance properties which are automatically available:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">order</span><span class="o">.</span><span class="n">line_items</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item_name</span> <span class="o">=</span> <span class="s">"Mac Mini Gen. 2"</span>
 </pre></div>
 
 <h4>
@@ -553,16 +508,39 @@ In all cases, saving a document results in schema defaults being applied where a
 
 <p>There is no limit to the number of middleware functions which can be registered.</p>
 
+<h3>
+<a name="model-state" class="anchor" href="#model-state"><span class="octicon octicon-link"></span></a>Model State</h3>
+
+<p>Mongothon models provide a few handy methods which let you determine the document's current persistence state:</p>
+
+<div class="highlight highlight-python"><pre><span class="n">post</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">post</span><span class="o">.</span><span class="n">is_new</span><span class="p">()</span>
+
+<span class="n">post</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">post</span><span class="o">.</span><span class="n">is_new</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">post</span><span class="o">.</span><span class="n">is_persisted</span><span class="p">()</span>
+
+<span class="n">post</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">post</span><span class="o">.</span><span class="n">is_new</span><span class="p">()</span>
+<span class="k">assert</span> <span class="ow">not</span> <span class="n">post</span><span class="o">.</span><span class="n">is_persisted</span><span class="p">()</span>
+<span class="k">assert</span> <span class="n">port</span><span class="o">.</span><span class="n">is_deleted</span><span class="p">()</span>
+</pre></div>
+
 <h1>
 <a name="developing-and-contributing" class="anchor" href="#developing-and-contributing"><span class="octicon octicon-link"></span></a>Developing and Contributing</h1>
 
 <p>To run Mongothon's tests, simply run <code>python setup.py nosetests</code> at the command line.</p>
 
 <p>All contributions submitted as GitHub pull requests are warmly received.</p>
-      </section>
+        </section>
 
+        <footer>
+          Mongothon is maintained by <a href="https://github.com/tleach">tleach</a><br>
+          This page was generated by <a href="http://pages.github.com">GitHub Pages</a>. Tactile theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.
+        </footer>
+
+        
+      </div>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-    
   </body>
 </html>
