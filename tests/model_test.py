@@ -197,10 +197,32 @@ class TestModel(TestCase):
     def test_find_by_id(self):
         self.mock_collection.find_one.return_value = doc
         oid = ObjectId()
+        loaded_car = self.Car.find_by_id(oid)
+        self.assertEquals(doc, loaded_car)
+        self.assert_predicates(loaded_car, is_persisted=True)
+        self.mock_collection.find_one.assert_called_with({'_id': oid})
+
+    def test_find_by_id_handles_integer_id(self):
+        self.mock_collection.find_one.return_value = doc
+        loaded_car = self.Car.find_by_id(33)
+        self.assertEquals(doc, loaded_car)
+        self.assert_predicates(loaded_car, is_persisted=True)
+        self.mock_collection.find_one.assert_called_with({'_id': 33})
+
+    def test_find_by_id_handles_oid_as_string(self):
+        self.mock_collection.find_one.return_value = doc
+        oid = ObjectId()
         loaded_car = self.Car.find_by_id(str(oid))
         self.assertEquals(doc, loaded_car)
         self.assert_predicates(loaded_car, is_persisted=True)
         self.mock_collection.find_one.assert_called_with({'_id': oid})
+
+    def test_find_by_id_handles_non_oid_string_id(self):
+        self.mock_collection.find_one.return_value = doc
+        loaded_car = self.Car.find_by_id("bob")
+        self.assertEquals(doc, loaded_car)
+        self.assert_predicates(loaded_car, is_persisted=True)
+        self.mock_collection.find_one.assert_called_with({'_id': "bob"})
 
     def test_reload(self):
         updated_doc = deepcopy(doc)

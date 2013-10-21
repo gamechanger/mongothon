@@ -2,6 +2,7 @@ from document import Document
 from copy import deepcopy
 from bson import ObjectId
 from middleware import MiddlewareRegistrar
+import re
 import types
 
 
@@ -11,6 +12,7 @@ class ModelState:
     PERSISTED = 2
     DELETED = 3
 
+OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
 
 class ScopeBuilder(object):
     """A helper class used to build query scopes. This class is provided with a
@@ -107,7 +109,11 @@ def create_model(schema, collection):
             """Checks whether the given id is an ObjectId instance, and if not wraps it."""
             if isinstance(id, ObjectId):
                 return id
-            return ObjectId(id)
+
+            if isinstance(id, basestring) and OBJECTIDEXPR.match(id):
+                return ObjectId(id)
+
+            return id
 
         @classmethod
         def _id_spec(cls, id):
