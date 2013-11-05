@@ -250,12 +250,21 @@ order = Order.find({'total_due': {'$gte': '10'}})  # returns a cursor containing
 ```
 
 #### Updating documents
-Atomic updates can be easily run against the current Model document:
+Mongothon two mechanisms to run updates against documents.
+
+##### `Model.update` (static method)
+The static method version of `update` is essentially a proxy for the underlying Pymongo collection object's `update` method and can be
+called as such.
 ```python
-order.update({'$unset': {'line_items': 1}})
+Order.update({'total_due': {'$gte': 700}}, {'$unset': {'line_items': 1}})
 ```
 
-
+##### `model.update` (instance method)
+The instance method version of `update` makes it easy to run an update statement against the current model document by defaulting the `query` used to `{'_id': self['_id']}`.
+```python
+order = Order.find_by_id(some_id)
+order.update({'$unset': {'line_items': 1}})
+```
 
 #### Counting items
 ```python
