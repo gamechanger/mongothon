@@ -250,10 +250,12 @@ order = Order.find({'total_due': {'$gte': '10'}})  # returns a cursor containing
 ```
 
 #### Updating documents
-Model classes can be used to perform updates on the collection:
+Atomic updates can be easily run against the current Model document:
 ```python
-Order.update({'total_due': {'$gte': '10'}}, {'$unset': {'line_items': 1}})
+order.update({'$unset': {'line_items': 1}})
 ```
+
+
 
 #### Counting items
 ```python
