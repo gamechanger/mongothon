@@ -239,6 +239,7 @@ Model classes provide a number of class methods which can be used to interact wi
 Model classes can be used to find individual documents by ID:
 ```python
 order = Order.find_by_id(some_id)  # returns an instance of Order
+                                   # or throws NotFoundException
 ```
 or using a search condition:
 ```python
