@@ -6,13 +6,25 @@ import re
 import types
 
 
+OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
+
 class ModelState:
     """Valid lifecycle states which a given Model instance may occupy."""
     NEW = 1
     PERSISTED = 2
     DELETED = 3
 
-OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
+
+class NotFoundException(Exception):
+    """Exception used to indicate that a requested record could not be
+    found."""
+    def __init__(self, collection, id):
+        self._collection = collection
+        self._id = id
+
+    def __str__(self):
+        return "{} {} not found".format(self._collection.name, self._id)
+
 
 class ScopeBuilder(object):
     """A helper class used to build query scopes. This class is provided with a
@@ -199,7 +211,16 @@ def create_model(schema, collection):
 
         @classmethod
         def find_by_id(cls, id):
-            return cls.find_one(cls._id_spec(id))
+            """
+            Finds a single document by it's ID. Throws a
+            NotFoundException if the document does not exist (the
+            assumption being if you're got an id you should be
+            pretty certain the thing exists)
+            """
+            obj = cls.find_one(cls._id_spec(id))
+            if not obj:
+                raise NotFoundException(collection, id)
+            return obj
 
         def reload(self):
             self.populate(collection.find_one(self.__class__._id_spec(self['_id'])))
