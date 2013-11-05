@@ -168,8 +168,17 @@ def create_model(schema, collection):
         def insert(*args, **kwargs):
             collection.insert(*args, **kwargs)
 
-        def update(self, *args, **kwargs):
-            return collection.update({"_id": self['_id']}, *args, **kwargs)
+        @staticmethod
+        def update(*args, **kwargs):
+            return collection.update(*args, **kwargs)
+
+        def _update_instance(self, *args, **kwargs):
+            self.__class__.update({'_id': self['_id']}, *args, **kwargs)
+
+        def __getattribute__(self, name):
+            if name == "update":
+                return self._update_instance
+            return super(Model, self).__getattribute__(name)
 
         def remove(self, *args, **kwargs):
             collection.remove(self['_id'], *args, **kwargs)
