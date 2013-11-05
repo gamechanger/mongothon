@@ -1,8 +1,7 @@
 from mongothon import create_model
 from unittest import TestCase
 from mock import Mock, ANY, call
-from mongothon import Document
-from mongothon import Schema
+from mongothon import Document, Schema, NotFoundException
 from mongothon.validators import one_of
 from mongothon.model import ScopeBuilder
 from bson import ObjectId
@@ -225,6 +224,13 @@ class TestModel(TestCase):
         self.assertEquals(doc, loaded_car)
         self.assert_predicates(loaded_car, is_persisted=True)
         self.mock_collection.find_one.assert_called_with({'_id': oid})
+
+    def test_find_by_id_missing_record(self):
+        """Test that find_by_id throws a NotFoundException if the requested record does not exist"""
+        self.mock_collection.find_one.return_value = None
+        with self.assertRaises(NotFoundException):
+            self.Car.find_by_id(ObjectId())
+
 
     def test_find_by_id_handles_non_oid_string_id(self):
         self.mock_collection.find_one.return_value = doc
