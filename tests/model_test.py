@@ -92,6 +92,7 @@ class TestModel(TestCase):
 
     def setUp(self):
         self.mock_collection = Mock()
+        self.mock_collection.name = "car"
         self.Car = create_model(car_schema, self.mock_collection)
         self.car = self.Car(doc)
 
@@ -99,6 +100,18 @@ class TestModel(TestCase):
         self.assertEquals(is_new, model.is_new())
         self.assertEquals(is_persisted, model.is_persisted())
         self.assertEquals(is_deleted, model.is_deleted())
+
+    def test_class_name_defaults_to_camelcased_collection_name(self):
+        mock_collection = Mock()
+        mock_collection.name = "some_model"
+        SomeModel = create_model(Schema({}), mock_collection)
+        self.assertEquals("SomeModel", SomeModel.__name__)
+
+    def test_class_name_can_be_overridden(self):
+        mock_collection = Mock()
+        mock_collection.name = "some_model"
+        SomeModel = create_model(Schema({}), mock_collection, "SomethingElse")
+        self.assertEquals("SomethingElse", SomeModel.__name__)
 
     def test_can_be_treated_as_a_dict(self):
         self.assertIsInstance(self.car, dict)
