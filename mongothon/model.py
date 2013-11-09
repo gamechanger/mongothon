@@ -100,204 +100,200 @@ class ScopeBuilder(object):
         return self.model.find(self.query, self.projection, **self.options)
 
 
-def create_model(schema, collection):
-    """Creates and returns a model class which can be used to perform all IO
-    against the given collection using the given schema."""
 
-    class Model(Document):
-        middleware_registrar = MiddlewareRegistrar()
+class Model(Document):
+    middleware_registrar = MiddlewareRegistrar()
 
-        def __init__(self, inital_doc=None, initial_state=ModelState.NEW):
-            self._state = initial_state
-            super(Model, self).__init__(inital_doc)
+    def __init__(self, inital_doc=None, initial_state=ModelState.NEW):
+        self._state = initial_state
+        super(Model, self).__init__(inital_doc)
 
-        def _create_working(self):
-            working = deepcopy(self)
-            schema.apply_defaults(working)
-            return working
+    def _create_working(self):
+        working = deepcopy(self)
+        self.schema.apply_defaults(working)
+        return working
 
-        @classmethod
-        def _ensure_object_id(cls, id):
-            """Checks whether the given id is an ObjectId instance, and if not wraps it."""
-            if isinstance(id, ObjectId):
-                return id
-
-            if isinstance(id, basestring) and OBJECTIDEXPR.match(id):
-                return ObjectId(id)
-
+    @classmethod
+    def _ensure_object_id(cls, id):
+        """Checks whether the given id is an ObjectId instance, and if not wraps it."""
+        if isinstance(id, ObjectId):
             return id
 
-        @classmethod
-        def _id_spec(cls, id):
-            return {'_id': cls._ensure_object_id(id)}
+        if isinstance(id, basestring) and OBJECTIDEXPR.match(id):
+            return ObjectId(id)
 
-        def is_new(self):
-            """Returns true if the current model instance is new and has yet to be
-            persisted to the underlying Mongo collection."""
-            return self._state == ModelState.NEW
+        return id
 
-        def is_persisted(self):
-            """Returns true if the model instance exists in the database."""
-            return self._state == ModelState.PERSISTED
+    @classmethod
+    def _id_spec(cls, id):
+        return {'_id': cls._ensure_object_id(id)}
 
-        def is_deleted(self):
-            """Returns true if the model instance was deleted from the database."""
-            return self._state == ModelState.DELETED
+    def is_new(self):
+        """Returns true if the current model instance is new and has yet to be
+        persisted to the underlying Mongo collection."""
+        return self._state == ModelState.NEW
 
-        def validate(self):
-            """Validates this model against the schema with which is was constructed.
-            Throws a ValidationException if the document is found to be invalid."""
-            self._do_validate(self._create_working())
+    def is_persisted(self):
+        """Returns true if the model instance exists in the database."""
+        return self._state == ModelState.PERSISTED
 
-        def _do_validate(self, document):
-            Model.middleware_registrar.apply('before_validate', document)
-            schema.validate(document)
-            Model.middleware_registrar.apply('after_validate', document)
+    def is_deleted(self):
+        """Returns true if the model instance was deleted from the database."""
+        return self._state == ModelState.DELETED
 
-        def apply_defaults(self):
-            """Apply schema defaults to this document."""
-            schema.apply_defaults(self)
+    def validate(self):
+        """Validates this model against the schema with which is was constructed.
+        Throws a ValidationException if the document is found to be invalid."""
+        self._do_validate(self._create_working())
 
-        def save(self, *args, **kwargs):
-            # Create a working copy of ourselves and validate it
-            working = self._create_working()
-            self._do_validate(working)
+    def _do_validate(self, document):
+        self.middleware_registrar.apply('before_validate', document)
+        self.schema.validate(document)
+        self.middleware_registrar.apply('after_validate', document)
 
-            # Apply before save middleware
-            Model.middleware_registrar.apply('before_save', working)
+    def apply_defaults(self):
+        """Apply schema defaults to this document."""
+        self.schema.apply_defaults(self)
 
-            # Attempt to save
-            collection.save(working, *args, **kwargs)
-            self._state = ModelState.PERSISTED
+    def save(self, *args, **kwargs):
+        # Create a working copy of ourselves and validate it
+        working = self._create_working()
+        self._do_validate(working)
 
-            # Apply after save middleware
-            Model.middleware_registrar.apply('after_save', working)
+        # Apply before save middleware
+        self.middleware_registrar.apply('before_save', working)
 
-            # On successful completion, update from the working copy
-            self.populate(working)
+        # Attempt to save
+        self.collection.save(working, *args, **kwargs)
+        self._state = ModelState.PERSISTED
 
-        @staticmethod
-        def insert(*args, **kwargs):
-            collection.insert(*args, **kwargs)
+        # Apply after save middleware
+        self.middleware_registrar.apply('after_save', working)
 
-        @staticmethod
-        def update(*args, **kwargs):
-            return collection.update(*args, **kwargs)
+        # On successful completion, update from the working copy
+        self.populate(working)
 
-        def _update_instance(self, *args, **kwargs):
-            self.__class__.update({'_id': self['_id']}, *args, **kwargs)
+    @classmethod
+    def insert(cls, *args, **kwargs):
+        cls.collection.insert(*args, **kwargs)
 
-        def __getattribute__(self, name):
-            if name == "update":
-                return self._update_instance
-            return super(Model, self).__getattribute__(name)
+    @classmethod
+    def update(cls, *args, **kwargs):
+        return cls.collection.update(*args, **kwargs)
 
-        def remove(self, *args, **kwargs):
-            collection.remove(self['_id'], *args, **kwargs)
-            self._state = ModelState.DELETED
+    def _update_instance(self, *args, **kwargs):
+        self.__class__.update({'_id': self['_id']}, *args, **kwargs)
 
-        @staticmethod
-        def count():
-            return collection.count()
+    def __getattribute__(self, name):
+        if name == "update":
+            return self._update_instance
+        return super(Model, self).__getattribute__(name)
 
-        @classmethod
-        def find_one(cls, *args, **kwargs):
-            return cls(collection.find_one(*args, **kwargs),
-                       initial_state=ModelState.PERSISTED)
+    def remove(self, *args, **kwargs):
+        self.collection.remove(self['_id'], *args, **kwargs)
+        self._state = ModelState.DELETED
 
-        @staticmethod
-        def find(*args, **kwargs):
-            return CursorWrapper(collection.find(*args, **kwargs))
+    @classmethod
+    def count(cls):
+        return cls.collection.count()
 
-        @classmethod
-        def find_by_id(cls, id):
-            """
-            Finds a single document by it's ID. Throws a
-            NotFoundException if the document does not exist (the
-            assumption being if you're got an id you should be
-            pretty certain the thing exists)
-            """
-            obj = cls.find_one(cls._id_spec(id))
-            if not obj:
-                raise NotFoundException(collection, id)
-            return obj
+    @classmethod
+    def find_one(cls, *args, **kwargs):
+        return cls(cls.collection.find_one(*args, **kwargs),
+                   initial_state=ModelState.PERSISTED)
 
-        def reload(self):
-            self.populate(collection.find_one(self.__class__._id_spec(self['_id'])))
+    @classmethod
+    def find(cls, *args, **kwargs):
+        return CursorWrapper(cls.collection.find(*args, **kwargs), cls)
 
-        @classmethod
-        def before_save(cls, middleware_func):
-            """Registers a middleware function to be run before every instance
-            of the given model is saved, after any before_validate middleware.
-            """
-            cls.middleware_registrar.register('before_save', middleware_func)
+    @classmethod
+    def find_by_id(cls, id):
+        """
+        Finds a single document by it's ID. Throws a
+        NotFoundException if the document does not exist (the
+        assumption being if you're got an id you should be
+        pretty certain the thing exists)
+        """
+        obj = cls.find_one(cls._id_spec(id))
+        if not obj:
+            raise NotFoundException(cls.collection, id)
+        return obj
 
-        @classmethod
-        def after_save(cls, middleware_func):
-            """Registers a middleware function to be run after every instance
-            of the given model is saved.
-            """
-            cls.middleware_registrar.register('after_save', middleware_func)
+    def reload(self):
+        self.populate(self.collection.find_one(self.__class__._id_spec(self['_id'])))
 
-        @classmethod
-        def before_validate(cls, middleware_func):
-            """Registers a middleware function to be run before every instance
-            of the given model is validated.
-            """
-            cls.middleware_registrar.register('before_validate', middleware_func)
+    @classmethod
+    def before_save(cls, middleware_func):
+        """Registers a middleware function to be run before every instance
+        of the given model is saved, after any before_validate middleware.
+        """
+        cls.middleware_registrar.register('before_save', middleware_func)
 
-        @classmethod
-        def after_validate(cls, middleware_func):
-            """Registers a middleware function to be run after every instance
-            of the given model is validated.
-            """
-            cls.middleware_registrar.register('after_validate', middleware_func)
+    @classmethod
+    def after_save(cls, middleware_func):
+        """Registers a middleware function to be run after every instance
+        of the given model is saved.
+        """
+        cls.middleware_registrar.register('after_save', middleware_func)
 
-        @classmethod
-        def class_method(cls, f):
-            """Decorator which dynamically binds class methods to the model for later use."""
-            setattr(cls, f.__name__, types.MethodType(f, cls))
+    @classmethod
+    def before_validate(cls, middleware_func):
+        """Registers a middleware function to be run before every instance
+        of the given model is validated.
+        """
+        cls.middleware_registrar.register('before_validate', middleware_func)
 
-        @classmethod
-        def instance_method(cls, f):
-            """Decorator which dynamically binds instance methods to the model."""
-            setattr(cls, f.__name__, f)
+    @classmethod
+    def after_validate(cls, middleware_func):
+        """Registers a middleware function to be run after every instance
+        of the given model is validated.
+        """
+        cls.middleware_registrar.register('after_validate', middleware_func)
 
-        @classmethod
-        def scope(cls, f):
-            """Decorator which can dynamically attach a query scope to the model."""
-            if not hasattr(cls, "scopes"):
-                cls.scopes = []
+    @classmethod
+    def class_method(cls, f):
+        """Decorator which dynamically binds class methods to the model for later use."""
+        setattr(cls, f.__name__, types.MethodType(f, cls))
 
-            cls.scopes.append(f)
+    @classmethod
+    def instance_method(cls, f):
+        """Decorator which dynamically binds instance methods to the model."""
+        setattr(cls, f.__name__, f)
 
-            def create_builder(self, *args, **kwargs):
-                bldr = ScopeBuilder(cls, cls.scopes)
-                return getattr(bldr, f.__name__)(*args, **kwargs)
+    @classmethod
+    def scope(cls, f):
+        """Decorator which can dynamically attach a query scope to the model."""
+        if not hasattr(cls, "scopes"):
+            cls.scopes = []
 
-            setattr(cls, f.__name__, types.MethodType(create_builder, cls))
+        cls.scopes.append(f)
+
+        def create_builder(self, *args, **kwargs):
+            bldr = ScopeBuilder(cls, cls.scopes)
+            return getattr(bldr, f.__name__)(*args, **kwargs)
+
+        setattr(cls, f.__name__, types.MethodType(create_builder, cls))
 
 
 
 
-    class CursorWrapper(object):
-        RETURNS_CURSOR = ['rewind', 'clone', 'add_option', 'remove_option',
-                          'limit', 'batch_size', 'skip', 'max_scan', 'sort',
-                          'hint', 'where']
+class CursorWrapper(object):
+    RETURNS_CURSOR = ['rewind', 'clone', 'add_option', 'remove_option',
+                      'limit', 'batch_size', 'skip', 'max_scan', 'sort',
+                      'hint', 'where']
 
-        def __init__(self, wrapped_cursor):
-            self._wrapped = wrapped_cursor
+    def __init__(self, wrapped_cursor, model_class):
+        self._wrapped = wrapped_cursor
+        self._model_class = model_class
 
-        def __getitem__(self, index):
-            return Model(self._wrapped[index], initial_state=ModelState.PERSISTED)
+    def __getitem__(self, index):
+        return self._model_class(self._wrapped[index], initial_state=ModelState.PERSISTED)
 
-        def __getattr__(self, name):
-            attr = getattr(self._wrapped, name)
-            if name in self.RETURNS_CURSOR:
-                def attr_wrapper(*args, **kwargs):
-                    return CursorWrapper(attr(*args, **kwargs))
+    def __getattr__(self, name):
+        attr = getattr(self._wrapped, name)
+        if name in self.RETURNS_CURSOR:
+            def attr_wrapper(*args, **kwargs):
+                return CursorWrapper(attr(*args, **kwargs), self._model_class)
 
-                return attr_wrapper
-            return attr
-
-    return Model
+            return attr_wrapper
+        return attr
