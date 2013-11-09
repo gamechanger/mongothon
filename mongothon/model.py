@@ -102,6 +102,16 @@ class ScopeBuilder(object):
 
 
 class Model(Document):
+    """
+    Model base class on which all specific user model classes subclass.
+
+    ** Do not attempt to subclass Model directly. **
+
+    Instead use mongothon.create_model which will ensure the model
+    subclass is correctly constructed with the appropriate collection
+    and schema dependencies.
+    """
+
     middleware_registrar = MiddlewareRegistrar()
 
     def __init__(self, inital_doc=None, initial_state=ModelState.NEW):
@@ -220,6 +230,8 @@ class Model(Document):
         return obj
 
     def reload(self):
+        """Reloads the current model's data from the underlying
+        database record, updating it in-place."""
         self.populate(self.collection.find_one(self.__class__._id_spec(self['_id'])))
 
     @classmethod
