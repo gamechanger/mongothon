@@ -9,7 +9,7 @@ setuptools.setup(
     description="A MongoDB object-document mapping layer for Python",
     license="BSD",
     keywords="mongo mongodb database pymongo odm validation",
-    url="http://github.com/tleach/mongothon",
+    url="http://github.com/gamechanger/mongothon",
     packages=["mongothon"],
     long_description="Mongothon is a MongoDB object-document mapping " +
                      "API for Python, loosely based on the awesome " +
