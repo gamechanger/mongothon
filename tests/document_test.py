@@ -1,10 +1,11 @@
 from mongothon import Document
 import unittest
 
+
 class TestDocument(unittest.TestCase):
 
-    def _get_document(self):
-        spec = {
+    def get_spec(self):
+        return {
             "author": "John Humphreys",
             "content": {
                 "title": "How to make cookies",
@@ -25,11 +26,14 @@ class TestDocument(unittest.TestCase):
             "tags": ["recipe", "cookies"]
         }
 
-        return Document(spec)
-
-
     def test_creates_nested_document_tree(self):
-        document = self._get_document()
+        document = Document(self.get_spec())
         self.assertIsInstance(document['content'], Document)
         self.assertIsInstance(document['comments'][0], Document)
+
+    def test_reports_circular_references(self):
+        spec = self.get_spec()
+        spec['circular'] = spec
+        with self.assertRaises(ValueError):
+            Document(spec)
 
