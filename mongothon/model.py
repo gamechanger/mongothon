@@ -205,8 +205,10 @@ class Model(Document):
 
     @classmethod
     def count(cls, query=None):
-        if query is None: query = {} # avoids global dict cached by arg default
-        return cls.collection.find(query).count()
+        if query is None:
+            return cls.collection.count()
+        else:
+            return cls.collection.find(query).count()
 
     @classmethod
     def find_one(cls, *args, **kwargs):
