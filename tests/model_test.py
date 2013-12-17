@@ -198,17 +198,6 @@ class TestModel(TestCase):
         self.mock_collection.count.return_value = 45
         self.assertEquals(45, self.Car.count())
 
-    def test_count_with_args(self):
-        mock_collection = Mock()
-        mock_collection.name = "some_model"
-        SomeModel = create_model(Schema({}), mock_collection)
-
-        rs = Mock()
-        rs.count.return_value = 30
-        mock_collection.find.return_value = rs
-
-        self.assertEquals(30, SomeModel.count({'a': 1}))
-
     def test_find_one(self):
         self.mock_collection.find_one.return_value = doc
         loaded_car = self.Car.find_one({'make': 'Peugeot'})
