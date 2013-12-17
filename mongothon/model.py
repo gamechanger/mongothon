@@ -204,11 +204,8 @@ class Model(Document):
         self._state = ModelState.DELETED
 
     @classmethod
-    def count(cls, query=None):
-        if query is None:
-            return cls.collection.count()
-        else:
-            return cls.collection.find(query).count()
+    def count(cls):
+        return cls.collection.count()
 
     @classmethod
     def find_one(cls, *args, **kwargs):
