@@ -204,8 +204,9 @@ class Model(Document):
         self._state = ModelState.DELETED
 
     @classmethod
-    def count(cls):
-        return cls.collection.count()
+    def count(cls, query=None):
+        if query is None: query = {} # avoids global dict cached by arg default
+        return cls.collection.find(query).count()
 
     @classmethod
     def find_one(cls, *args, **kwargs):
