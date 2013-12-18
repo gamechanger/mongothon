@@ -176,14 +176,21 @@ class TestModel(TestCase):
         self.Car.insert(doc)
         self.mock_collection.insert.assert_called_with(doc)
 
-    def test_update_on_instance(self):
+    def test_update_instance(self):
         oid = ObjectId()
         self.car['_id'] = oid
         self.car.save()
-        self.car.update({'model': '106'})
+        self.car.update_instance({'model': '106'})
         self.assert_predicates(self.car, is_persisted=True)
         self.mock_collection.update.assert_called_with(
             {'_id': oid}, {'model': '106'})
+
+    def test_update_on_instance(self):
+        oid = ObjectId()
+        self.car['_id'] = oid
+        self.car.update({'model': '106'})
+        self.assertFalse(self.mock_collection.called)
+        self.assertEqual(self.car['model'], '106')
 
     def test_update_on_class(self):
         oid = ObjectId()

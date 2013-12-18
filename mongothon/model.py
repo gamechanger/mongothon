@@ -187,16 +187,16 @@ class Model(Document):
     def insert(cls, *args, **kwargs):
         cls.collection.insert(*args, **kwargs)
 
+    def update_instance(self, *args, **kwargs):
+        return self.__class__.update({'_id': self['_id']}, *args, **kwargs)
+
     @classmethod
     def update(cls, *args, **kwargs):
         return cls.collection.update(*args, **kwargs)
 
-    def _update_instance(self, *args, **kwargs):
-        self.__class__.update({'_id': self['_id']}, *args, **kwargs)
-
     def __getattribute__(self, name):
-        if name == "update":
-            return self._update_instance
+        if name == 'update':
+            return lambda *args, **kwargs: dict.update(self, *args, **kwargs)
         return super(Model, self).__getattribute__(name)
 
     def remove(self, *args, **kwargs):
