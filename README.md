@@ -267,7 +267,7 @@ order = Order.find_by_id(some_id)
 order.update_instance({'$unset': {'line_items': 1}})
 ```
 
-### Note
+###### Note
 `model.update` (instance method) will delegate to python's dictionary API:
 ```python
 order = Order.find_by_id(some_id)
