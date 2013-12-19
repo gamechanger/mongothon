@@ -106,11 +106,14 @@ class TestPyMongoIntegration(unittest.TestCase):
         other.save()
         blog_post = BlogPost(valid_doc())
         blog_post.save()
-        blog_post.update({"likes": 5})
+        blog_post.update_instance({'$set': {'likes': 5}})
+        BlogPost.update({'_id': blog_post['_id']}, {'$set': {'misc': 'important'}})
         reloaded_blog_post = BlogPost.find_by_id(blog_post['_id'])
         reloaded_other_blog_post = BlogPost.find_by_id(other['_id'])
         self.assertEqual(5, reloaded_blog_post['likes'])
+        self.assertEqual('important', reloaded_blog_post['misc'])
         self.assertEqual(0, reloaded_other_blog_post['likes'])
+        self.assertNotIn('misc', reloaded_other_blog_post)
 
     def test_count(self):
         for i in range(5):

@@ -254,17 +254,25 @@ order = Order.find({'total_due': {'$gte': '10'}})  # returns a cursor containing
 Mongothon two mechanisms to run updates against documents.
 
 ##### `Model.update` (static method)
-The static method version of `update` is essentially a proxy for the underlying Pymongo collection object's `update` method and can be
+The class method version of `update` is essentially a proxy for the underlying Pymongo collection object's `update` method and can be
 called as such.
 ```python
 Order.update({'total_due': {'$gte': 700}}, {'$unset': {'line_items': 1}})
 ```
 
-##### `model.update` (instance method)
-The instance method version of `update` makes it easy to run an update statement against the current model document by defaulting the `query` used to `{'_id': self['_id']}`.
+##### `model.update_instance` (instance method)
+The instance method `update_instance` makes it easy to run an update statement against the current model document by defaulting the `query` used to `{'_id': self['_id']}`.
 ```python
 order = Order.find_by_id(some_id)
-order.update({'$unset': {'line_items': 1}})
+order.update_instance({'$unset': {'line_items': 1}})
+```
+
+###### Note
+`model.update` (instance method) will delegate to python's dictionary API:
+```python
+order = Order.find_by_id(some_id)
+order.update({'line_items': 1})
+print order['line_items']  # 1
 ```
 
 #### Counting items
