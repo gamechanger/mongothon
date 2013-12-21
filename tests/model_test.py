@@ -380,11 +380,12 @@ class TestModel(TestCase):
         self.assertIsInstance(cars[0], self.Car)
         self.mock_collection.find.assert_called_once_with(
             {"trim.ac": True, "trim.doors": {"$in": [3, 5]}},
-            {},
+            None,
             sort=[("make", -1)])
         self.assertEqual(2, cars.count())
         for car in cars:
             self.assertIsInstance(car, self.Car)
+
 
 
 class TestScopeBuilder(TestCase):
@@ -428,7 +429,6 @@ class TestScopeBuilder(TestCase):
         self.assertEquals({"thing": "blah"}, bldr.query)
         self.assertEquals({"thing": 1, "other": 1}, bldr.projection)
         self.assertEquals({"limit": 5}, bldr.options)
-
 
 
     def test_chained_scope_query_building(self):
@@ -501,7 +501,7 @@ class TestScopeBuilder(TestCase):
         self.assertEquals(2, count)
         mock_model.find.assert_called_once_with(
             {"thing": "blah", "woo": "ha"},
-            {})
+            None)
 
 
     def test_unpack_scope_with_just_query(self):
