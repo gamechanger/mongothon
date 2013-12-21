@@ -97,7 +97,7 @@ class ScopeBuilder(object):
 
     def execute(self):
         """Executes the currently built up query."""
-        return self.model.find(self.query, self.projection, **self.options)
+        return self.model.find(self.query, self.projection or None, **self.options)
 
 
 
