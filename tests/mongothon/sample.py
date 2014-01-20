@@ -1,8 +1,9 @@
 """Provides a valid sample set of schemas and documents adhereing to those
 schemas for use in testing."""
 
-from mongothon import Schema, Mixed
-from mongothon.validators import one_of
+from mongothon import Schema
+from schematic import Mixed
+from schematic.validators import one_of
 from datetime import datetime
 from bson.objectid import ObjectId
 
@@ -35,7 +36,7 @@ blog_post_schema = Schema({
     "likes":            {"type": int, "default": 0},
     "creation_date":    {"type": datetime, "default": stubnow},
     "tags":             [basestring],
-    "misc":             {"type": Mixed},
+    "misc":             {"type": Mixed(basestring, int)},
     "linked_id":        {"type": Mixed(int, basestring)},
     "publication_id":   {"type": ObjectId}
 })

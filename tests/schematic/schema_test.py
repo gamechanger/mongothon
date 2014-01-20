@@ -1,18 +1,18 @@
-from mongothon import Schema
-from mongothon.schema import ValidationException, SchemaFormatException, Mixed
-from mongothon.validators import one_of, lte, gte
+from schematic import Schema
+from schematic.exceptions import ValidationException, SchemaFormatException
+from schematic.validators import one_of, lte, gte
 import unittest
 from mock import patch
 from datetime import datetime
-from sample import blog_post_schema, name_schema, stubnow, valid_doc
-from bson.objectid import ObjectId
+from sample import blog_post_schema, stubnow, valid_doc
 
-class TestSchemaVerificationTest(unittest.TestCase):
+
+class TestSchemaVerification(unittest.TestCase):
 
     def assert_spec_invalid(self, spec, path):
         for strict in [True, False]:
             with self.assertRaises(SchemaFormatException) as cm:
-                Schema(spec, strict).verify()
+                Schema(spec, strict)
             self.assertEqual(path, cm.exception.path)
 
     def test_requires_field_spec_dict(self):
@@ -21,13 +21,17 @@ class TestSchemaVerificationTest(unittest.TestCase):
     def test_missing_type(self):
         self.assert_spec_invalid({"author": {}}, 'author')
 
-    def test_type_not_supported(self):
-        self.assert_spec_invalid({"author": {'type':tuple}}, 'author')
+    def test_type_can_be_a_type(self):
+        Schema({"author": {'type': str}})
 
-    def test_supported_types(self):
-        field_types = [ObjectId, basestring, int, long, float, bool, datetime, Mixed, Mixed(int, ObjectId)]
-        for field_type in field_types:
-            Schema({'some_field': {"type":field_type}}).verify()
+    def test_type_can_be_another_schema(self):
+        Schema({"author": {'type': Schema({
+                    'first': {'type': str},
+                    'last': {'type': str}
+                })}})
+
+    def test_type_cannot_be_an_instance(self):
+        self.assert_spec_invalid({"author": {'type': "wrong"}}, 'author')
 
     def test_required_should_be_a_boolean(self):
         self.assert_spec_invalid(
@@ -37,10 +41,10 @@ class TestSchemaVerificationTest(unittest.TestCase):
             'author')
 
     def test_single_validation_function(self):
-        Schema({'some_field': {'type':int, "validates":one_of(['a', 'b'])}}).verify()
+        Schema({'some_field': {'type':int, "validates":one_of(['a', 'b'])}})
 
     def test_multiple_validation_functions(self):
-        Schema({'some_field': {'type':int, "validates":[gte(1), lte(10)]}}).verify()
+        Schema({'some_field': {'type':int, "validates":[gte(1), lte(10)]}})
 
     def test_invalid_validation(self):
         self.assert_spec_invalid(
@@ -73,7 +77,7 @@ class TestSchemaVerificationTest(unittest.TestCase):
             'somefield')
 
     def test_default_value_of_correct_type(self):
-        Schema({'num_wheels':{'type':int, 'default':4}}).verify()
+        Schema({'num_wheels':{'type':int, 'default':4}})
 
     def test_default_value_of_incorrect_type(self):
         self.assert_spec_invalid(
@@ -84,20 +88,10 @@ class TestSchemaVerificationTest(unittest.TestCase):
         def default_fn():
             return 4
 
-        Schema({'num_wheels':{'type':int, 'default':default_fn}}).verify()
-
+        Schema({'num_wheels':{'type':int, 'default':default_fn}})
 
     def test_valid_schema_with_nesting(self):
-        blog_post_schema.verify()
-
-    def test_unsupported_type_in_nested_schema(self):
-        self.assert_spec_invalid(
-            {
-                "content": {'type': Schema({
-                    "somefield": {"type": tuple}
-                })}
-            },
-            'content.somefield')
+        blog_post_schema
 
     def test_invalid_nested_collection_with_multiple_schemas(self):
         self.assert_spec_invalid(
@@ -105,13 +99,6 @@ class TestSchemaVerificationTest(unittest.TestCase):
                 "items": [Schema({"somefield": {"type": int}}), Schema({"other": {"type": int}})]
             },
             'items')
-
-    def test_unsupported_type_in_nested_collection(self):
-        self.assert_spec_invalid(
-            {
-                "items": [Schema({"somefield": {"type": tuple}})]
-            },
-            'items.somefield')
 
     def test_nested_schema_cannot_have_default(self):
         self.assert_spec_invalid(
@@ -125,7 +112,13 @@ class TestSchemaVerificationTest(unittest.TestCase):
     def test_nested_collection_of_ints(self):
         Schema({
             "numbers": [int]
-        }).verify()
+        })
+
+    def test_invalid_nested_collection_with_value_not_type(self):
+        self.assert_spec_invalid({
+                "items": [1]
+            },
+            'items')
 
 
     @patch('logging.warning')
@@ -133,24 +126,6 @@ class TestSchemaVerificationTest(unittest.TestCase):
         schema = Schema({'expected_field': {'type': int}}, strict=False)
         schema.validate({'unexpected_field': 44})
         warning.assert_called_once_with('Unexpected document field not present in schema: unexpected_field')
-
-
-class TestMixedType(unittest.TestCase):
-    def test_instance_requires_at_least_two_types(self):
-        with self.assertRaises(Exception):
-            Mixed(int)
-        Mixed(int, basestring)
-
-    def test_instance_only_accepts_valid_types(self):
-        with self.assertRaises(Exception):
-            Mixed(int, set)
-
-    def test_matches_enclosed_type(self):
-        mixed = Mixed(int, basestring)
-        self.assertTrue(
-            mixed.is_instance_of_enclosed_type("test"))
-        self.assertFalse(
-            mixed.is_instance_of_enclosed_type(123.45))
 
 
 class TestValidation(unittest.TestCase):
