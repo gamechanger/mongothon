@@ -12,7 +12,7 @@ class TestSchemaVerification(unittest.TestCase):
     def assert_spec_invalid(self, spec, path):
         for strict in [True, False]:
             with self.assertRaises(SchemaFormatException) as cm:
-                Schema(spec, strict).verify()
+                Schema(spec, strict)
             self.assertEqual(path, cm.exception.path)
 
     def test_requires_field_spec_dict(self):
@@ -20,6 +20,18 @@ class TestSchemaVerification(unittest.TestCase):
 
     def test_missing_type(self):
         self.assert_spec_invalid({"author": {}}, 'author')
+
+    def test_type_can_be_a_type(self):
+        Schema({"author": {'type': str}})
+
+    def test_type_can_be_another_schema(self):
+        Schema({"author": {'type': Schema({
+                    'first': {'type': str},
+                    'last': {'type': str}
+                })}})
+
+    def test_type_cannot_be_an_instance(self):
+        self.assert_spec_invalid({"author": {'type': "wrong"}}, 'author')
 
     def test_required_should_be_a_boolean(self):
         self.assert_spec_invalid(
@@ -29,10 +41,10 @@ class TestSchemaVerification(unittest.TestCase):
             'author')
 
     def test_single_validation_function(self):
-        Schema({'some_field': {'type':int, "validates":one_of(['a', 'b'])}}).verify()
+        Schema({'some_field': {'type':int, "validates":one_of(['a', 'b'])}})
 
     def test_multiple_validation_functions(self):
-        Schema({'some_field': {'type':int, "validates":[gte(1), lte(10)]}}).verify()
+        Schema({'some_field': {'type':int, "validates":[gte(1), lte(10)]}})
 
     def test_invalid_validation(self):
         self.assert_spec_invalid(
@@ -65,7 +77,7 @@ class TestSchemaVerification(unittest.TestCase):
             'somefield')
 
     def test_default_value_of_correct_type(self):
-        Schema({'num_wheels':{'type':int, 'default':4}}).verify()
+        Schema({'num_wheels':{'type':int, 'default':4}})
 
     def test_default_value_of_incorrect_type(self):
         self.assert_spec_invalid(
@@ -76,11 +88,10 @@ class TestSchemaVerification(unittest.TestCase):
         def default_fn():
             return 4
 
-        Schema({'num_wheels':{'type':int, 'default':default_fn}}).verify()
-
+        Schema({'num_wheels':{'type':int, 'default':default_fn}})
 
     def test_valid_schema_with_nesting(self):
-        blog_post_schema.verify()
+        blog_post_schema
 
     def test_invalid_nested_collection_with_multiple_schemas(self):
         self.assert_spec_invalid(
@@ -101,7 +112,13 @@ class TestSchemaVerification(unittest.TestCase):
     def test_nested_collection_of_ints(self):
         Schema({
             "numbers": [int]
-        }).verify()
+        })
+
+    def test_invalid_nested_collection_with_value_not_type(self):
+        self.assert_spec_invalid({
+                "items": [1]
+            },
+            'items')
 
 
     @patch('logging.warning')

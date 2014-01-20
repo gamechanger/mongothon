@@ -11,15 +11,11 @@ class Schema(object):
         self._doc_spec = doc_spec
         self._virtuals = {}
         self._strict = strict
+        self._verify()
 
     @property
     def doc_spec(self):
         return self._doc_spec
-
-    def verify(self):
-        """Verifies that the given schema document spec is valid."""
-        # TODO: Shouldn't need to pass self
-        self._verify_schema(self)
 
     def apply_defaults(self, instance):
         """Applies default values to the given document"""
@@ -37,34 +33,33 @@ class Schema(object):
     def _append_path(self, prefix, field):
         """Appends the given field to the given path prefix."""
         if prefix:
-            return "{0}.{1}".format(prefix, field)
+            return "{}.{}".format(prefix, field)
         else:
             return field
 
-    def _verify_schema(self, schema, path_prefix=None):
-        """Verifies that the given schema is valid. This method is recursive and verifies and
-        schemas nested within the given schema."""
-        for field, spec in schema.doc_spec.iteritems():
+    def _verify(self, path_prefix=None):
+        """Verifies that this schema's doc spec is valid and makes sense."""
+        for field, spec in self.doc_spec.iteritems():
             path = self._append_path(path_prefix, field)
 
             # Standard dict-based spec
             if isinstance(spec, dict):
                 self._verify_field_spec(spec, path)
 
-            # An embedded collection
+            # An embedded collection declaration
             elif isinstance(spec, list):
-                if len(spec) == 0 or len(spec) > 1:
+                # There should only be a single entry in the list
+                if len(spec) != 1:
                     raise SchemaFormatException(
-                        "Exactly one type must be declared for the embedded collection at {0}",
+                        "Exactly one type must be declared for the embedded collection at {}",
                         path)
 
-                # If the list type is a schema, recurse into it
-                if isinstance(spec[0], Schema):
-                    self._verify_schema(spec[0], path)
-                    continue
+                # The entry should either be a type, or another Schema
+                if not isinstance(spec[0], type) and not isinstance(spec[0], Schema):
+                    raise SchemaFormatException("The type declaration for embedded collection at {} must be either a type (int, basestring, etc) or another Schema.", path)
 
             else:
-                raise SchemaFormatException("Invalid field definition for {0}", path)
+                raise SchemaFormatException("Invalid field definition for {}", path)
 
 
     def _verify_field_spec(self, spec, path):
@@ -72,22 +67,22 @@ class Schema(object):
 
         # Required should be a boolean
         if 'required' in spec and not isinstance(spec['required'], bool):
-            raise SchemaFormatException("{0} required declaration should be True or False", path)
+            raise SchemaFormatException("{} required declaration should be True or False", path)
 
         # Must have a type specified
         if 'type' not in spec:
-            raise SchemaFormatException("{0} has no type declared.", path)
+            raise SchemaFormatException("{} has no type declared.", path)
 
         field_type = spec['type']
 
         if isinstance(field_type, Schema):
             # Nested documents cannot have defaults or validation
             if not set(spec.keys()).issubset(set(['type', 'required'])):
-                raise SchemaFormatException("Unsupported field spec item at {0}. Items: "+repr(spec.keys()), path)
-
-            # Recurse into nested Schema
-            self._verify_schema(field_type, path)
+                raise SchemaFormatException("Unsupported field spec item at {}. Items: "+repr(spec.keys()), path)
             return
+
+        elif not isinstance(field_type, type):
+            raise SchemaFormatException("Unsupported field type at {}. Type must be a type or another Schema", path)
 
         # Validations should be either a single function or array of functions
         if 'validates' in spec:
@@ -101,11 +96,11 @@ class Schema(object):
 
         # Defaults must be of the correct type or a function
         if 'default' in spec and not (isinstance(spec['default'], field_type) or callable(spec['default'])):
-            raise SchemaFormatException("Default value for {0} is not of the nominated type.", path)
+            raise SchemaFormatException("Default value for {} is not of the nominated type.", path)
 
         # Only expected spec keys are supported
         if not set(spec.keys()).issubset(set(['type', 'required', 'validates', 'default'])):
-            raise SchemaFormatException("Unsupported field spec item at {0}. Items: "+repr(spec.keys()), path)
+            raise SchemaFormatException("Unsupported field spec item at {}. Items: "+repr(spec.keys()), path)
 
 
     def _verify_validator(self, validator, path):
@@ -113,12 +108,12 @@ class Schema(object):
 
         # Validator should be a function
         if not callable(validator):
-            raise SchemaFormatException("Invalid validations for {0}", path)
+            raise SchemaFormatException("Invalid validations for {}", path)
 
         # Validator should accept a single argument
         (args, varargs, keywords, defaults) = getargspec(validator)
         if len(args) != 1:
-            raise SchemaFormatException("Invalid validations for {0}", path)
+            raise SchemaFormatException("Invalid validations for {}", path)
 
 
     def _validate_instance_against_schema(self, instance, schema, errors, path_prefix=''):
@@ -150,7 +145,7 @@ class Schema(object):
                         continue
                     else:
                         for i, item in enumerate(value):
-                            instance_path = "{0}.{1}".format(path, i)
+                            instance_path = "{}.{}".format(path, i)
 
                             if isinstance(spec[0], Schema):
                                 self._validate_instance_against_schema(item, spec[0], errors, instance_path)
@@ -193,7 +188,7 @@ class Schema(object):
 
         # Otherwise, validate the field
         if not isinstance(value, field_type):
-            errors[path] = "Field should be of type {0}".format(field_type)
+            errors[path] = "Field should be of type {}".format(field_type)
             return
 
         validations = field_spec.get('validates', None)
