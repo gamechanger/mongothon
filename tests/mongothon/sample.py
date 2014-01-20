@@ -1,8 +1,9 @@
 """Provides a valid sample set of schemas and documents adhereing to those
 schemas for use in testing."""
 
-from mongothon import Schema, Mixed
-from mongothon.validators import one_of
+from mongothon import Schema
+from schematic import Mixed
+from schematic.validators import one_of
 from datetime import datetime
 from bson.objectid import ObjectId
 

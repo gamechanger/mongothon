@@ -1,6 +1,7 @@
-from mongothon import Schema
-from mongothon.schema import ValidationException, SchemaFormatException, Mixed
-from mongothon.validators import one_of, lte, gte
+from schematic import Schema
+from schematic.exceptions import ValidationException, SchemaFormatException
+from schematic.extension_types import Mixed
+from schematic.validators import one_of, lte, gte
 import unittest
 from mock import patch
 from datetime import datetime
