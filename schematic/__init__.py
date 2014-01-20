@@ -18,14 +18,42 @@ class Schema(object):
         return self._doc_spec
 
     def apply_defaults(self, instance):
-        """Applies default values to the given document"""
-        self._apply_schema_defaults(self, instance)
+        """Applies the defaults described by the this schema to the given
+        document instance as appropriate. Defaults are only applied to
+        fields which are currently unset."""
+        for field, spec in self.doc_spec.iteritems():
+
+            # Determine if a value already exists for the field
+            if field in instance:
+                value = instance[field]
+
+                # recurse into nested collections
+                if isinstance(spec, list):
+                    if isinstance(value, list) and isinstance(spec[0], Schema):
+                        for item in value:
+                            spec[0].apply_defaults(item)
+
+                # recurse into nested docs
+                elif isinstance(spec['type'], Schema) and isinstance(value, dict):
+                    spec['type'].apply_defaults(value)
+
+                # Bailout as we don't want to apply a default
+                continue
+
+            # Apply a default if one is available
+            if isinstance(spec, dict) and 'default' in spec:
+                default = spec['default']
+                if callable(default):
+                    instance[field] = default()
+                else:
+                    instance[field] = default
+
 
     def validate(self, instance):
         """Validates the given document against this schema. Raises a
         ValidationException if there are any failures."""
         errors = {}
-        self._validate_instance_against_schema(instance, self, errors)
+        self._validate_instance(instance, errors)
 
         if len(errors) > 0:
             raise ValidationException(errors)
@@ -116,7 +144,7 @@ class Schema(object):
             raise SchemaFormatException("Invalid validations for {}", path)
 
 
-    def _validate_instance_against_schema(self, instance, schema, errors, path_prefix=''):
+    def _validate_instance(self, instance, errors, path_prefix=''):
         """Validates that the given instance of a document conforms to the given schema's
         structure and validations. Any validation errors are added to the given errors
         collection. The caller should assume the instance is considered valid if the
@@ -128,7 +156,7 @@ class Schema(object):
 
         # Loop over each field in the schema and check the instance value conforms
         # to its spec
-        for field, spec in schema.doc_spec.iteritems():
+        for field, spec in self.doc_spec.iteritems():
             value = instance.get(field, None)
 
             path = self._append_path(path_prefix, field)
@@ -148,7 +176,7 @@ class Schema(object):
                             instance_path = "{}.{}".format(path, i)
 
                             if isinstance(spec[0], Schema):
-                                self._validate_instance_against_schema(item, spec[0], errors, instance_path)
+                                spec[0]._validate_instance(item, errors, instance_path)
                             elif not isinstance(item, spec[0]):
                                 errors[instance_path] = "List item is of incorrect type"
 
@@ -156,7 +184,7 @@ class Schema(object):
         # have any fields not declared in the schema, unless strict mode has been
         # explicitly disabled.
         for field in instance:
-            if field not in schema.doc_spec:
+            if field not in self.doc_spec:
                 if self._strict:
                     errors[self._append_path(path_prefix, field)] = "Unexpected document field not present in schema"
                 else:
@@ -181,7 +209,7 @@ class Schema(object):
         # If our field is an embedded document, recurse into it
         if isinstance(field_type, Schema):
             if isinstance(value, dict):
-                self._validate_instance_against_schema(value, field_type, errors, path)
+                field_type._validate_instance(value, errors, path)
             else:
                 errors[path] = "%s should be an embedded document" % path
             return
@@ -206,35 +234,3 @@ class Schema(object):
         else:
             apply(validations)
 
-
-    def _apply_schema_defaults(self, schema, instance):
-        """Applies the defaults described by the given schema to the given
-        document instance as appropriate. Defaults are only applied to
-        fields which are currently unset."""
-
-        for field, spec in schema.doc_spec.iteritems():
-
-            # Determine if a value already exists for the field
-            if field in instance:
-                value = instance[field]
-
-                # recurse into nested collections
-                if isinstance(spec, list):
-                    if isinstance(value, list) and isinstance(spec[0], Schema):
-                        for item in value:
-                            self._apply_schema_defaults(spec[0], item)
-
-                # recurse into nested docs
-                elif isinstance(spec['type'], Schema) and isinstance(value, dict):
-                    self._apply_schema_defaults(spec['type'], value)
-
-                # Bailout as we don't want to apply a default
-                continue
-
-            # Apply a default if one is available
-            if isinstance(spec, dict) and 'default' in spec:
-                default = spec['default']
-                if callable(default):
-                    instance[field] = default()
-                else:
-                    instance[field] = default
