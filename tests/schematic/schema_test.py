@@ -6,7 +6,7 @@ import unittest
 from mock import patch
 from datetime import datetime
 from sample import blog_post_schema, stubnow, valid_doc
-from bson.objectid import ObjectId
+
 
 class TestSchemaVerificationTest(unittest.TestCase):
 
@@ -21,11 +21,6 @@ class TestSchemaVerificationTest(unittest.TestCase):
 
     def test_missing_type(self):
         self.assert_spec_invalid({"author": {}}, 'author')
-
-    def test_supported_types(self):
-        field_types = [ObjectId, basestring, int, long, float, bool, datetime, Mixed, Mixed(int, ObjectId)]
-        for field_type in field_types:
-            Schema({'some_field': {"type":field_type}}).verify()
 
     def test_required_should_be_a_boolean(self):
         self.assert_spec_invalid(
