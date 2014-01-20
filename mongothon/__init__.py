@@ -2,7 +2,7 @@ from inflection import camelize
 from document import Document
 from model import Model, NotFoundException
 from schema import Schema
-from schematic import Mixed, ValidationException
+from schemer import Mixed, ValidationException
 
 def create_model(schema, collection, class_name=None):
     """

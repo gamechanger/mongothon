@@ -2,8 +2,8 @@
 schemas for use in testing."""
 
 from mongothon import Schema
-from schematic import Mixed
-from schematic.validators import one_of
+from schemer import Mixed
+from schemer.validators import one_of
 from datetime import datetime
 from bson.objectid import ObjectId
 

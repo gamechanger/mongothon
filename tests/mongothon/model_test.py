@@ -2,7 +2,7 @@ from mongothon import create_model
 from unittest import TestCase
 from mock import Mock, ANY, call
 from mongothon import Document, Schema, NotFoundException
-from schematic.validators import one_of
+from schemer.validators import one_of
 from bson import ObjectId
 from copy import deepcopy
 

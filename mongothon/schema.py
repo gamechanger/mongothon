@@ -1,8 +1,8 @@
 from bson.objectid import ObjectId
-import schematic
+import schemer
 
 
-class Schema(schematic.Schema):
+class Schema(schemer.Schema):
     """A Schema encapsulates the structure and constraints of a Mongo document."""
 
     def __init__(self, doc_spec, **kwargs):
