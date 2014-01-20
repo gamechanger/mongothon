@@ -1,6 +1,5 @@
 from schematic import Schema
 from schematic.exceptions import ValidationException, SchemaFormatException
-from schematic.extension_types import Mixed
 from schematic.validators import one_of, lte, gte
 import unittest
 from mock import patch
@@ -8,7 +7,7 @@ from datetime import datetime
 from sample import blog_post_schema, stubnow, valid_doc
 
 
-class TestSchemaVerificationTest(unittest.TestCase):
+class TestSchemaVerification(unittest.TestCase):
 
     def assert_spec_invalid(self, spec, path):
         for strict in [True, False]:
@@ -110,19 +109,6 @@ class TestSchemaVerificationTest(unittest.TestCase):
         schema = Schema({'expected_field': {'type': int}}, strict=False)
         schema.validate({'unexpected_field': 44})
         warning.assert_called_once_with('Unexpected document field not present in schema: unexpected_field')
-
-
-class TestMixedType(unittest.TestCase):
-    def test_instance_requires_at_least_two_types(self):
-        with self.assertRaises(Exception):
-            Mixed(int)
-        Mixed(int, basestring)
-
-    def test_is_instance(self):
-        mixed = Mixed(int, basestring)
-        self.assertIsInstance("test", mixed)
-        self.assertNotIsInstance(123.45, mixed)
-
 
 
 class TestValidation(unittest.TestCase):
