@@ -1,4 +1,6 @@
 from document import Document
+from queries import ScopeBuilder
+from exceptions import NotFoundException
 from copy import deepcopy
 from bson import ObjectId
 from middleware import MiddlewareRegistrar
@@ -7,99 +9,6 @@ import types
 
 
 OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
-
-class ModelState:
-    """Valid lifecycle states which a given Model instance may occupy."""
-    NEW = 1
-    PERSISTED = 2
-    DELETED = 3
-
-
-class NotFoundException(Exception):
-    """Exception used to indicate that a requested record could not be
-    found."""
-    def __init__(self, collection, id):
-        self._collection = collection
-        self._id = id
-
-    def __str__(self):
-        return "{} {} not found".format(self._collection.name, self._id)
-
-
-class ScopeBuilder(object):
-    """A helper class used to build query scopes. This class is provided with a
-    list of scope functions (all of which return query args) which can then
-    be chained together using this builder to build up more complex queries."""
-
-    @classmethod
-    def unpack_scope(cls, scope):
-        """Unpacks the response from a scope function. The function should return
-        either a query, a query and a projection, or a query a projection and
-        an query options hash."""
-        query = {}
-        projection = {}
-        options = {}
-
-        if isinstance(scope, tuple):
-            if len(scope) > 3:
-                raise ValueError("Invalid scope")
-            if len(scope) >= 1:
-                query = scope[0]
-            if len(scope) >= 2:
-                projection = scope[1]
-            if len(scope) == 3:
-                options = scope[2]
-        elif isinstance(scope, dict):
-            query = scope
-        else:
-            raise ValueError("Invalid scope")
-
-        return query, projection, options
-
-
-    @classmethod
-    def register_fn(cls, f):
-        """Registers a scope function on this builder."""
-        def inner(self, *args, **kwargs):
-            try:
-                query, projection, options = cls.unpack_scope(f(*args, **kwargs))
-                new_query = deepcopy(self.query)
-                new_projection = deepcopy(self.projection)
-                new_options = deepcopy(self.options)
-                new_query.update(query)
-                new_projection.update(projection)
-                new_options.update(options)
-                return ScopeBuilder(self.model, self.fns, new_query,
-                    new_projection, new_options)
-            except ValueError:
-                raise ValueError("Scope function \"{}\ returns an invalid scope".format(f.__name__))
-
-        setattr(cls, f.__name__, inner)
-
-
-    def __init__(self, model, fns, query={}, projection={}, options={}):
-        self.fns = fns
-        self.model = model
-        self.query = query
-        self.projection = projection
-        self.options = options
-        for fn in fns:
-            self.register_fn(fn)
-
-    def __getitem__(self, index):
-        """Implementation of the iterator __getitem__ method. This allows the
-        builder query to be executed and iterated over without a separate call
-        to `execute()` being needed."""
-        if not hasattr(self, "in_progress_cursor"):
-            self.in_progress_cursor = self.execute()
-        return self.in_progress_cursor[index]
-
-
-    def execute(self):
-        """Executes the currently built up query."""
-        return self.model.find(self.query, self.projection or None, **self.options)
-
-
 
 class Model(Document):
     """
@@ -112,9 +21,14 @@ class Model(Document):
     and schema dependencies.
     """
 
+    # Valid lifecycle states which a given Model instance may occupy.
+    NEW = 1
+    PERSISTED = 2
+    DELETED = 3
+
     middleware_registrar = MiddlewareRegistrar()
 
-    def __init__(self, inital_doc=None, initial_state=ModelState.NEW):
+    def __init__(self, inital_doc=None, initial_state=NEW):
         self._state = initial_state
         super(Model, self).__init__(inital_doc)
 
@@ -141,15 +55,15 @@ class Model(Document):
     def is_new(self):
         """Returns true if the current model instance is new and has yet to be
         persisted to the underlying Mongo collection."""
-        return self._state == ModelState.NEW
+        return self._state == Model.NEW
 
     def is_persisted(self):
         """Returns true if the model instance exists in the database."""
-        return self._state == ModelState.PERSISTED
+        return self._state == Model.PERSISTED
 
     def is_deleted(self):
         """Returns true if the model instance was deleted from the database."""
-        return self._state == ModelState.DELETED
+        return self._state == Model.DELETED
 
     def validate(self):
         """Validates this model against the schema with which is was constructed.
@@ -175,7 +89,7 @@ class Model(Document):
 
         # Attempt to save
         self.collection.save(working, *args, **kwargs)
-        self._state = ModelState.PERSISTED
+        self._state = Model.PERSISTED
 
         # Apply after save middleware
         self.middleware_registrar.apply('after_save', working)
@@ -201,7 +115,7 @@ class Model(Document):
 
     def remove(self, *args, **kwargs):
         self.collection.remove(self['_id'], *args, **kwargs)
-        self._state = ModelState.DELETED
+        self._state = Model.DELETED
 
     @classmethod
     def count(cls):
@@ -210,7 +124,7 @@ class Model(Document):
     @classmethod
     def find_one(cls, *args, **kwargs):
         return cls(cls.collection.find_one(*args, **kwargs),
-                   initial_state=ModelState.PERSISTED)
+                   initial_state=Model.PERSISTED)
 
     @classmethod
     def find(cls, *args, **kwargs):
@@ -299,7 +213,7 @@ class CursorWrapper(object):
         self._model_class = model_class
 
     def __getitem__(self, index):
-        return self._model_class(self._wrapped[index], initial_state=ModelState.PERSISTED)
+        return self._model_class(self._wrapped[index], initial_state=Model.PERSISTED)
 
     def __getattr__(self, name):
         attr = getattr(self._wrapped, name)
