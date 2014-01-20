@@ -1,10 +1,9 @@
-from datetime import datetime
 from inspect import getargspec
 from bson.objectid import ObjectId
 import logging
 
 
-class Mixed(object):
+def Mixed(*types):
     """Mixed type, used to indicate a field in a schema can be
     one of many types. Use as a last resort only.
     The Mixed type can be used directly as a class to indicate
@@ -14,23 +13,24 @@ class Mixed(object):
     field may is allowed to be for more control:
     `"my_field": {"type": Mixed(ObjectId, int)}`
     """
-    def __init__(self, *types):
-        if len(types) < 2:
-            raise ValueError("Mixed type requires at least 2 specific types")
-        for mtype in types:
-            if mtype not in SUPPORTED_TYPES:
-                raise ValueError("{0} is not a supported type.".format(mtype))
-        self.types = set(types)
+    if len(types) < 2:
+        raise ValueError("Mixed type requires at least 2 specific types")
 
-    def is_instance_of_enclosed_type(self, value):
-        """Returns true of the given value is an instance of
-        one of the types enclosed by this mixed type instance."""
-        for mtype in self.types:
-            if isinstance(value, mtype):
-                return True
-        return False
+    types = set(types) # dedupe
 
-SUPPORTED_TYPES = [basestring, int, float, datetime, long, bool, Mixed, ObjectId]
+    class MixedType(type):
+        def __instancecheck__(cls, instance):
+            """Returns true if the given value is an instance of
+            one of the types enclosed by this mixed type."""
+            for mtype in types:
+                if isinstance(instance, mtype):
+                    return True
+            return False
+
+    class Mixed(object):
+        __metaclass__ = MixedType
+
+    return Mixed
 
 
 class SchemaFormatException(Exception):
@@ -129,13 +129,6 @@ class Schema(object):
                     self._verify_schema(spec[0], path)
                     continue
 
-                # Otherwise just make sure it's supported
-                if spec[0] not in SUPPORTED_TYPES:
-                    raise SchemaFormatException(
-                        "Embedded collection at {0} not described using a Schema object.",
-                        path)
-
-
             else:
                 raise SchemaFormatException("Invalid field definition for {0}", path)
 
@@ -161,10 +154,6 @@ class Schema(object):
             # Recurse into nested Schema
             self._verify_schema(field_type, path)
             return
-
-        # Must be one of the supported types
-        if field_type not in SUPPORTED_TYPES and not isinstance(field_type, Mixed):
-            raise SchemaFormatException("{0} is not declared with a valid type.", path)
 
         # Validations should be either a single function or array of functions
         if 'validates' in spec:
@@ -268,13 +257,8 @@ class Schema(object):
                 errors[path] = "%s should be an embedded document" % path
             return
 
-        # Otherwise, validate the field - mixed fields are handled
-        # slightly differently
-        if isinstance(field_type, Mixed):
-            if not field_type.is_instance_of_enclosed_type(value):
-                errors[path] = "Field should be one of the types specified."
-                return
-        elif field_type is not Mixed and not isinstance(value, field_type):
+        # Otherwise, validate the field
+        if not isinstance(value, field_type):
             errors[path] = "Field should be of type {0}".format(field_type)
             return
 

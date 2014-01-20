@@ -4,7 +4,7 @@ from mongothon.validators import one_of, lte, gte
 import unittest
 from mock import patch
 from datetime import datetime
-from sample import blog_post_schema, name_schema, stubnow, valid_doc
+from sample import blog_post_schema, stubnow, valid_doc
 from bson.objectid import ObjectId
 
 class TestSchemaVerificationTest(unittest.TestCase):
@@ -20,9 +20,6 @@ class TestSchemaVerificationTest(unittest.TestCase):
 
     def test_missing_type(self):
         self.assert_spec_invalid({"author": {}}, 'author')
-
-    def test_type_not_supported(self):
-        self.assert_spec_invalid({"author": {'type':tuple}}, 'author')
 
     def test_supported_types(self):
         field_types = [ObjectId, basestring, int, long, float, bool, datetime, Mixed, Mixed(int, ObjectId)]
@@ -90,28 +87,12 @@ class TestSchemaVerificationTest(unittest.TestCase):
     def test_valid_schema_with_nesting(self):
         blog_post_schema.verify()
 
-    def test_unsupported_type_in_nested_schema(self):
-        self.assert_spec_invalid(
-            {
-                "content": {'type': Schema({
-                    "somefield": {"type": tuple}
-                })}
-            },
-            'content.somefield')
-
     def test_invalid_nested_collection_with_multiple_schemas(self):
         self.assert_spec_invalid(
             {
                 "items": [Schema({"somefield": {"type": int}}), Schema({"other": {"type": int}})]
             },
             'items')
-
-    def test_unsupported_type_in_nested_collection(self):
-        self.assert_spec_invalid(
-            {
-                "items": [Schema({"somefield": {"type": tuple}})]
-            },
-            'items.somefield')
 
     def test_nested_schema_cannot_have_default(self):
         self.assert_spec_invalid(
@@ -141,16 +122,11 @@ class TestMixedType(unittest.TestCase):
             Mixed(int)
         Mixed(int, basestring)
 
-    def test_instance_only_accepts_valid_types(self):
-        with self.assertRaises(Exception):
-            Mixed(int, set)
-
-    def test_matches_enclosed_type(self):
+    def test_is_instance(self):
         mixed = Mixed(int, basestring)
-        self.assertTrue(
-            mixed.is_instance_of_enclosed_type("test"))
-        self.assertFalse(
-            mixed.is_instance_of_enclosed_type(123.45))
+        self.assertIsInstance("test", mixed)
+        self.assertNotIsInstance(123.45, mixed)
+
 
 
 class TestValidation(unittest.TestCase):

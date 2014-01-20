@@ -35,7 +35,7 @@ blog_post_schema = Schema({
     "likes":            {"type": int, "default": 0},
     "creation_date":    {"type": datetime, "default": stubnow},
     "tags":             [basestring],
-    "misc":             {"type": Mixed},
+    "misc":             {"type": Mixed(basestring, int)},
     "linked_id":        {"type": Mixed(int, basestring)},
     "publication_id":   {"type": ObjectId}
 })
