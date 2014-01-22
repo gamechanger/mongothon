@@ -200,7 +200,7 @@ order.reload()
 
 
 #### Custom instance methods
-Custom instance methods can be added to a model using the model's `instance_method` decorator. This comes in useful when you want to wrap up common operations on a document:
+Custom instance methods can be added to a model using the model's `instance_method` decorator. This comes in handy when you want to wrap up common operations on a document:
 
 ```python
 @Order.instance_method
