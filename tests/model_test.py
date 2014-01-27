@@ -469,6 +469,50 @@ class TestScopeBuilder(TestCase):
                           bldr.query)
         self.assertEquals({"limit": 10}, bldr.options)
 
+    def test_queries_are_deep_merged_with_chained_scopes(self):
+        mock_model = Mock()
+
+        def scope_a():
+            return {"thing": {"$elemMatch": {'somefield': 1}}}
+
+        def scope_b():
+            return {"thing": {"$elemMatch": {'someotherfield': 10}}}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        bldr = bldr.scope_a().scope_b()
+        self.assertEquals({"thing": {"$elemMatch": {'somefield': 1,
+                                                    'someotherfield': 10}}},
+                          bldr.query)
+
+    def test_queries_with_lists_are_deep_merged_with_chained_scopes(self):
+        mock_model = Mock()
+
+        def scope_a():
+            return {"thing": {"$in": [1, 2, 3]}}
+
+        def scope_b():
+            return {"thing": {"$in": [3, 4, 5]}}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        bldr = bldr.scope_a().scope_b()
+        self.assertEquals({"thing": {"$in": [1, 2, 3, 4, 5]}},
+                          bldr.query)
+
+    def test_queries_with_lists_of_dicts_are_deep_merged_with_chained_scopes(self):
+        mock_model = Mock()
+
+        def scope_a():
+            return {"thing": {"$all": [{"$elemMatch": {"size": "M"}}]}}
+
+        def scope_b():
+            return {"thing": {"$all": [{"$elemMatch": {"num": 100}}]}}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        bldr = bldr.scope_a().scope_b()
+        self.assertEquals({"thing": {"$all": [{"$elemMatch": {"size": "M"}},
+                                              {"$elemMatch": {"num": 100}}]}},
+                          bldr.query)
+
     def test_calls_back_to_model_on_execute(self):
         mock_model = Mock()
         cursor = Mock()

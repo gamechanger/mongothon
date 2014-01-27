@@ -8,6 +8,21 @@ import types
 
 OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
 
+def deep_merge(source, dest):
+    """Deep merges source dict into dest dict."""
+    for key, value in source.iteritems():
+        if key in dest:
+            if isinstance(value, dict) and isinstance(dest[key], dict):
+                deep_merge(value, dest[key])
+                continue
+            elif isinstance(value, list) and isinstance(dest[key], list):
+                for item in value:
+                    if item not in dest[key]:
+                        dest[key].append(item)
+                continue
+        dest[key] = value
+
+
 class ModelState:
     """Valid lifecycle states which a given Model instance may occupy."""
     NEW = 1
@@ -66,7 +81,7 @@ class ScopeBuilder(object):
                 new_query = deepcopy(self.query)
                 new_projection = deepcopy(self.projection)
                 new_options = deepcopy(self.options)
-                new_query.update(query)
+                deep_merge(query, new_query)
                 new_projection.update(projection)
                 new_options.update(options)
                 return ScopeBuilder(self.model, self.fns, new_query,
