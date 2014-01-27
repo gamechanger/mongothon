@@ -230,6 +230,52 @@ def single_item():
 orders = Order.before(datetime(2012, 1, 1)).single_item().execute()
 ```
 
+#### Combining queries with nested criteria
+
+When dealing with multiple chained scopes, Mongothon uses a "deep merge, last query wins" approach to combine multiple query dicts into a single query dicts. This ensures that queries with nested query elements may be combined just as easily as simple key-value queries.
+
+Examples:
+```python
+@Order.scope
+def item_priced_lt(price):
+    return {"items": {
+        "$elemMatch": {
+            "price": {"$lt": price}
+        }
+    }}
+
+@Order.scope
+def item_priced_gt(price):
+    return {"items": {
+        "$elemMatch": {
+            "price": {"$gt": price}
+        }
+    }}
+
+@Order.scope
+def item_named(name:
+    return {"items": {
+        "$elemMatch": {
+            "name": name
+        }
+    }}
+
+orders = Order.item_named('iPhone').item_priced_lt(500).item_priced_gt(200).execute()
+
+# Resultant query:
+#   {"items": {
+#       "$elemMatch": {
+#           "name": "iPhone",
+#           "price": {"$gt": 200, "$lt": 500}
+#       }
+#   }}
+
+```
+
+Other notes:
+ - If you have multiple queries specifying a list of values (e.g. as part of an $in statement) for the same field, Mongothon will combine the two lists for you. `{'tags': {'$in': ['red', 'blue']}` + `{'tags': {'$in': ['green', 'blue']}` => `{'tags': {'$in': ['red', 'blue', 'green']}`
+ - Even with deep merging, if you attempt to combine two queries which specify different values for matching a field, the last scope in the chain will win.
+
 #### Implementing scope functions
 
 A "scope" function is simply a function which returns up to three return values:

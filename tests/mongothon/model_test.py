@@ -391,3 +391,4 @@ class TestModel(TestCase):
         self.assertEqual(2, cars.count())
         for car in cars:
             self.assertIsInstance(car, self.Car)
+

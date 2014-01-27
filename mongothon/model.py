@@ -10,6 +10,7 @@ import types
 
 OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
 
+
 class Model(Document):
     """
     Model base class on which all specific user model classes subclass.
