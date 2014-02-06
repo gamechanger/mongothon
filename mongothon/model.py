@@ -344,4 +344,4 @@ class IteratorWrapper(object):
         self._model_class = model_class
 
     def next(self):
-        return self._model_class(self._wrapped.next(), initial_state=Model.PERSISTED)
+        return self._model_class(self._wrapped.next(), initial_state=ModelState.PERSISTED)
