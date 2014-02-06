@@ -302,9 +302,12 @@ class Model(Document):
         setattr(cls, f.__name__, types.MethodType(create_builder, cls))
 
 
-
-
 class CursorWrapper(object):
+    """
+    A wrapper for the standard pymongo Cursor object which ensures all
+    objects returned by the cursor's query are wrapped in an instance
+    of the given Model class.
+    """
     RETURNS_CURSOR = ['rewind', 'clone', 'add_option', 'remove_option',
                       'limit', 'batch_size', 'skip', 'max_scan', 'sort',
                       'hint', 'where']
@@ -316,6 +319,9 @@ class CursorWrapper(object):
     def __getitem__(self, index):
         return self._model_class(self._wrapped[index], initial_state=ModelState.PERSISTED)
 
+    def __iter__(self):
+        return IteratorWrapper(self._wrapped.__iter__(), self._model_class)
+
     def __getattr__(self, name):
         attr = getattr(self._wrapped, name)
         if name in self.RETURNS_CURSOR:
@@ -324,3 +330,18 @@ class CursorWrapper(object):
 
             return attr_wrapper
         return attr
+
+
+class IteratorWrapper(object):
+    """
+    Wrapper for the iterator object returned by the pymongo cursor. Allows
+    CursorWrapper to implement the iterator protocol while still returning
+    models.
+    """
+
+    def __init__(self, wrapped_iterator, model_class):
+        self._wrapped = wrapped_iterator
+        self._model_class = model_class
+
+    def next(self):
+        return self._model_class(self._wrapped.next(), initial_state=Model.PERSISTED)

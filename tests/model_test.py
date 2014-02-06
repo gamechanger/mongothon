@@ -75,7 +75,7 @@ class FakeCursor(object):
             return return_self
 
     def __iter__(self):
-        return self
+        return FakeCursor(self._contents)
 
     def next(self):
         if self._next >= len(self._contents):
@@ -221,6 +221,18 @@ class TestModel(TestCase):
         for car in cars:
             self.assert_predicates(car, is_persisted=True)
             self.assertIsInstance(car, self.Car)
+
+    def test_find_with_iterator_protocol(self):
+        cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
+        self.mock_collection.find.return_value = cursor
+        cars = self.Car.find({'make': 'Peugeot'}, limit=2)
+        iter1 = cars.__iter__()
+        iter2 = cars.__iter__()
+        self.assertIsInstance(iter1.next(), self.Car)
+        self.assertIsInstance(iter2.next(), self.Car)
+        self.assertIsInstance(iter1.next(), self.Car)
+        self.assertIsInstance(iter2.next(), self.Car)
+
 
     def test_find_by_id(self):
         self.mock_collection.find_one.return_value = doc
