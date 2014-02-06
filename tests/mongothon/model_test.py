@@ -329,35 +329,35 @@ class TestModel(TestCase):
             setattr(tracker, key, value)
         return tracker
 
-    def test_before_save_middleware(self):
-        middleware = Mock()
-        tracker = self.call_tracker(middleware=middleware, collection=self.mock_collection)
-        self.Car.before_save(middleware)
+    def test_before_save_event(self):
+        handler = Mock()
+        tracker = self.call_tracker(handler=handler, collection=self.mock_collection)
+        self.Car.on('before_save', handler)
         self.car.save()
-        self.assertEquals([call.middleware(self.car), call.collection.save(self.car)], tracker.mock_calls)
+        self.assertEquals([call.handler(self.car), call.collection.save(self.car)], tracker.mock_calls)
 
-    def test_after_save_middleware(self):
-        middleware = Mock()
-        tracker = self.call_tracker(middleware=middleware, collection=self.mock_collection)
-        self.Car.after_save(middleware)
+    def test_after_save_event(self):
+        handler = Mock()
+        tracker = self.call_tracker(handler=handler, collection=self.mock_collection)
+        self.Car.on('after_save', handler)
         self.car.save()
-        self.assertEquals([call.collection.save(self.car), call.middleware(self.car)], tracker.mock_calls)
+        self.assertEquals([call.collection.save(self.car), call.handler(self.car)], tracker.mock_calls)
 
-    def test_before_validate_middleware(self):
-        middleware = Mock()
+    def test_before_validate_event(self):
+        handler = Mock()
         car_schema.validate = Mock()
-        tracker = self.call_tracker(middleware=middleware, validate=car_schema.validate)
-        self.Car.before_validate(middleware)
+        tracker = self.call_tracker(handler=handler, validate=car_schema.validate)
+        self.Car.on('before_validate', handler)
         self.car.validate()
-        self.assertEquals([call.middleware(self.car), call.validate(self.car)], tracker.mock_calls)
+        self.assertEquals([call.handler(self.car), call.validate(self.car)], tracker.mock_calls)
 
-    def test_after_validate_middleware(self):
-        middleware = Mock()
+    def test_after_validate_event(self):
+        handler = Mock()
         car_schema.validate = Mock()
-        tracker = self.call_tracker(middleware=middleware, validate=car_schema.validate)
-        self.Car.after_validate(middleware)
+        tracker = self.call_tracker(handler=handler, validate=car_schema.validate)
+        self.Car.on('after_validate', handler)
         self.car.validate()
-        self.assertEquals([call.validate(self.car), call.middleware(self.car)], tracker.mock_calls)
+        self.assertEquals([call.validate(self.car), call.handler(self.car)], tracker.mock_calls)
 
 
     def test_class_method_registration(self):

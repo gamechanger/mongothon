@@ -1,11 +1,11 @@
-from document import Document
-from queries import ScopeBuilder
-from exceptions import NotFoundException
-from copy import deepcopy
-from bson import ObjectId
-from middleware import MiddlewareRegistrar
 import re
 import types
+from copy import deepcopy
+from bson import ObjectId
+from .document import Document
+from .queries import ScopeBuilder
+from .exceptions import NotFoundException
+from .events import EventHandlerRegistrar
 
 
 OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
@@ -27,7 +27,7 @@ class Model(Document):
     PERSISTED = 2
     DELETED = 3
 
-    middleware_registrar = MiddlewareRegistrar()
+    handler_registrar = EventHandlerRegistrar()
 
     def __init__(self, inital_doc=None, initial_state=NEW):
         self._state = initial_state
@@ -72,9 +72,9 @@ class Model(Document):
         self._do_validate(self._create_working())
 
     def _do_validate(self, document):
-        self.middleware_registrar.apply('before_validate', document)
+        self.handler_registrar.apply('before_validate', document)
         self.schema.validate(document)
-        self.middleware_registrar.apply('after_validate', document)
+        self.handler_registrar.apply('after_validate', document)
 
     def apply_defaults(self):
         """Apply schema defaults to this document."""
@@ -86,14 +86,14 @@ class Model(Document):
         self._do_validate(working)
 
         # Apply before save middleware
-        self.middleware_registrar.apply('before_save', working)
+        self.handler_registrar.apply('before_save', working)
 
         # Attempt to save
         self.collection.save(working, *args, **kwargs)
         self._state = Model.PERSISTED
 
         # Apply after save middleware
-        self.middleware_registrar.apply('after_save', working)
+        self.handler_registrar.apply('after_save', working)
 
         # On successful completion, update from the working copy
         self.populate(working)
@@ -150,32 +150,11 @@ class Model(Document):
         self.populate(self.collection.find_one(self.__class__._id_spec(self['_id'])))
 
     @classmethod
-    def before_save(cls, middleware_func):
-        """Registers a middleware function to be run before every instance
-        of the given model is saved, after any before_validate middleware.
+    def on(cls, event, handler_func):
+        """Registers a handler function whenever an instance of the model
+        emits the given event.
         """
-        cls.middleware_registrar.register('before_save', middleware_func)
-
-    @classmethod
-    def after_save(cls, middleware_func):
-        """Registers a middleware function to be run after every instance
-        of the given model is saved.
-        """
-        cls.middleware_registrar.register('after_save', middleware_func)
-
-    @classmethod
-    def before_validate(cls, middleware_func):
-        """Registers a middleware function to be run before every instance
-        of the given model is validated.
-        """
-        cls.middleware_registrar.register('before_validate', middleware_func)
-
-    @classmethod
-    def after_validate(cls, middleware_func):
-        """Registers a middleware function to be run after every instance
-        of the given model is validated.
-        """
-        cls.middleware_registrar.register('after_validate', middleware_func)
+        cls.handler_registrar.register(event, handler_func)
 
     @classmethod
     def class_method(cls, f):
