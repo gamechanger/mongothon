@@ -5,5 +5,7 @@ services:
   - mongodb
 # command to install dependencies
 install: "python setup.py install"
+# wait a little more cos mongo takes a while to start
+before_script: "sleep 5"
 # command to run tests
 script: "python setup.py nosetests"
