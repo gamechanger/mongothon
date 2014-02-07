@@ -19,8 +19,8 @@ class EventHandlerRegistrar(object):
         if fn not in self._handler_dict[event]:
             self._handler_dict[event].append(fn)
 
-    def apply(self, event, document):
+    def apply(self, event, document, *args, **kwargs):
         """Applies all middleware functions registered against the given
         event in order to the given document."""
         for fn in self._handler_dict.get(event, []):
-            fn(document)
+            fn(document, *args, **kwargs)
