@@ -107,7 +107,10 @@ class Model(Document):
         cls.collection.insert(*args, **kwargs)
 
     def update_instance(self, *args, **kwargs):
-        return self.__class__.update({'_id': self['_id']}, *args, **kwargs)
+        self.emit('will_update', *args, **kwargs)
+        result = self.__class__.update({'_id': self['_id']}, *args, **kwargs)
+        self.emit('did_update', *args, **kwargs)
+        return result
 
     @classmethod
     def update(cls, *args, **kwargs):

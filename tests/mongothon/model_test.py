@@ -365,6 +365,13 @@ class TestModel(TestCase):
         car = self.Car()
         handler.assert_called_once_with(car)
 
+    def test_will_update_event(self):
+        handler = Mock()
+        self.Car.on('will_update', handler)
+        self.car['_id'] = 'abc'
+        self.car.update_instance({"$set": {"somefield": "somevalue"}}, safe=True)
+        handler.assert_called_once_with(self.car, {"$set": {"somefield": "somevalue"}}, safe=True)
+
     def test_emit_custom_event(self):
         handler = Mock()
         self.Car.on('fruit_explosion', handler)
