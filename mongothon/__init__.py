@@ -3,6 +3,7 @@ from document import Document
 from model import Model, NotFoundException
 from schema import Schema
 from schemer import Mixed, ValidationException
+from schemer import validators
 
 def create_model(schema, collection, class_name=None):
     """
