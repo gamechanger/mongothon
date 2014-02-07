@@ -1,9 +1,8 @@
 """Provides a valid sample set of schemas and documents adhereing to those
 schemas for use in testing."""
 
-from mongothon import Schema
-from schemer import Mixed
-from schemer.validators import one_of
+from mongothon import Schema, Mixed, Array
+from mongothon.validators import one_of
 from datetime import datetime
 from bson.objectid import ObjectId
 
@@ -32,10 +31,10 @@ blog_post_schema = Schema({
         "page_views":       {"type": int, "default": 1}
     }), "required": True},
     "category":         {"type": basestring, "validates":one_of("cooking", "politics")},
-    "comments":         [comment_schema],
+    "comments":         {"type": Array(comment_schema)},
     "likes":            {"type": int, "default": 0},
     "creation_date":    {"type": datetime, "default": stubnow},
-    "tags":             [basestring],
+    "tags":             {"type": Array(basestring)},
     "misc":             {"type": Mixed(basestring, int)},
     "linked_id":        {"type": Mixed(int, basestring)},
     "publication_id":   {"type": ObjectId}

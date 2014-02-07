@@ -2,8 +2,8 @@ from inflection import camelize
 from document import Document
 from model import Model, NotFoundException
 from schema import Schema
-from schemer import Mixed, ValidationException
-from schemer import validators
+from schemer import Mixed, ValidationException, Array
+
 
 def create_model(schema, collection, class_name=None):
     """
@@ -17,7 +17,6 @@ def create_model(schema, collection, class_name=None):
     Optionally, a class_name argument can be provided to
     override this.
     """
-
     if not class_name:
         class_name = camelize(str(collection.name))
     return type(

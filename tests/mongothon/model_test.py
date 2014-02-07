@@ -1,8 +1,8 @@
 from mongothon import create_model
 from unittest import TestCase
 from mock import Mock, ANY, call
-from mongothon import Document, Schema, NotFoundException
-from schemer.validators import one_of
+from mongothon import Document, Schema, NotFoundException, Array
+from mongothon.validators import one_of
 from bson import ObjectId
 from copy import deepcopy
 from .fake import FakeCursor
@@ -11,15 +11,15 @@ car_schema = Schema({
     "make":                 {"type": basestring, "required": True},
     "model":                {"type": basestring, "required": True},
     "trim":                 {"type": Schema({
-        "ac":               {"type": bool, "default": True},
-        "doors":            {"type": int, "required": True, "default": 4}
+        "ac":                   {"type": bool, "default": True},
+        "doors":                {"type": int, "required": True, "default": 4}
     }), "required": True},
-    "wheels":   [Schema({
+    "wheels":               {"type": Array(Schema({
         "position":         {"type": basestring, "required": True, "validates": one_of('FR', 'FL', 'RR', 'RL')},
         "tire":             {"type": basestring},
         "diameter":         {"type": int}
-    })],
-    "options": [basestring]
+    }))},
+    "options":              {"type": Array(basestring)}
 })
 
 
