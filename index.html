@@ -36,7 +36,7 @@
 
 <p>Mongothon is a MongoDB object-document mapping API for Python, loosely based on the awesome <a href="http://mongoosejs.com/">mongoose.js</a> library.</p>
 
-<p><a href="https://travis-ci.org/tleach/mongothon"><img src="https://travis-ci.org/tleach/mongothon.png?branch=master" alt="build status" title="Build status"></a></p>
+<p><a href="https://travis-ci.org/gamechanger/mongothon"><img src="https://travis-ci.org/gamechanger/mongothon.png?branch=master" alt="build status" title="Build status"></a></p>
 
 <h1>
 <a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h1>
@@ -54,14 +54,16 @@
 <h1>
 <a name="getting-started" class="anchor" href="#getting-started"><span class="octicon octicon-link"></span></a>Getting Started</h1>
 
-<p>Mongothon allows you to declaratively express the structure and contraints of your Mongo document in a reusable Schema using Python dicts. Schemas can then be used to generate reusable Model classes which can be used in your application to perform IO with your associated Mongo collection.</p>
+<p>Mongothon allows you to couple reusable schemas (based on the <a href="http://github.com/gamechanger/schemer">Schemer</a> API) with Model classes which can be used in your application to perform IO with your associated Mongo collection.</p>
 
 <h2>
 <a name="example" class="anchor" href="#example"><span class="octicon octicon-link"></span></a>Example</h2>
 
 <p>Define the Mongo document structure and constraints in a Schema:</p>
 
-<div class="highlight highlight-python"><pre><span class="n">car_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
+<div class="highlight highlight-python"><pre><span class="kn">from</span> <span class="nn">mongothon</span> <span class="kn">import</span> <span class="n">Schema</span>
+
+<span class="n">car_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
     <span class="s">"make"</span><span class="p">:</span>         <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">,</span> <span class="s">"required"</span><span class="p">:</span> <span class="bp">True</span><span class="p">},</span>
     <span class="s">"model"</span><span class="p">:</span>        <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">,</span> <span class="s">"required"</span><span class="p">:</span> <span class="bp">True</span><span class="p">},</span>
     <span class="s">"num_wheels"</span><span class="p">:</span>   <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>        <span class="s">"default"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s">"validates"</span><span class="p">:</span> <span class="n">gte</span><span class="p">(</span><span class="mi">0</span><span class="p">)}</span>
@@ -118,178 +120,9 @@
 <h2>
 <a name="schemas" class="anchor" href="#schemas"><span class="octicon octicon-link"></span></a>Schemas</h2>
 
-<h3>
-<a name="types" class="anchor" href="#types"><span class="octicon octicon-link"></span></a>Types</h3>
+<p>Schemas in Mongothon are based almost completely on the Schema class provided by the <a href="http://github.com/gamechanger/schemer">Schemer</a> library. Take a look at the <a href="http://github.com/gamechanger/schemer">Schemer</a> docs for details of how to describe your document's structure, validation rules and defaults.</p>
 
-<p>Each field in a Mongothon schema must be given a type by adding a <code>"type"</code> key to the field spec dict. For example, this schema declares a single <code>"name"</code> field with a type of <code>basestring</code>:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"name"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">}})</span>
-</pre></div>
-
-<p>Supported field types are: <code>basestring</code>, <code>int</code>, <code>float</code>, <code>datetime</code>, <code>long</code>, <code>bool</code>, <code>Schema</code> (see Nested schemas below) and <code>Mixed</code>.</p>
-
-<h4>
-<a name="the-mixed-type" class="anchor" href="#the-mixed-type"><span class="octicon octicon-link"></span></a>The "Mixed" type</h4>
-
-<p>The <code>Mixed</code> type allows you to indicate that a field supports values of multiple types. Use of this type is generally not encouraged (consistent field typing makes life easier) but is sometimes necessary.
-<code>Mixed</code> can be provided as a class to indicate a value of any supported type may be used in a given field:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"misc"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="n">Mixed</span><span class="p">}})</span>  <span class="c"># all types are valid in this field</span>
-</pre></div>
-
-<p>You can also instantiate <code>Mixed</code> with a list of sub-types to indicate that a value of one of a subset of supported types may be used in the field:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"external_id"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="n">Mixed</span><span class="p">(</span><span class="nb">basestring</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">ObjectId</span><span class="p">)}})</span>  <span class="c"># only basestring, int and ObjectId are supported</span>
-</pre></div>
-
-<p>If you attempt to save a model containing a value of the wrong type for a given a field a <code>ValidationException</code> will be thrown.</p>
-
-<h3>
-<a name="mandatory-fields" class="anchor" href="#mandatory-fields"><span class="octicon octicon-link"></span></a>Mandatory fields</h3>
-
-<p>You can require a field to be present in a document by adding <code>"required": True</code> to the Schema:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"name"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">,</span> <span class="s">"required"</span><span class="p">:</span> <span class="bp">True</span><span class="p">}})</span>
-</pre></div>
-
-<p>By default all fields are not required.
-If <code>save()</code> is called on model which does not contain a value for a required field then the model will raise a <code>ValidationException</code>.</p>
-
-<h3>
-<a name="defaults" class="anchor" href="#defaults"><span class="octicon octicon-link"></span></a>Defaults</h3>
-
-<p>Schemas allow you to specify default values for fields which are used in the event a value is not provided in a given document.
-A default can either be specified as literal:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"num_wheels"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s">"default"</span><span class="p">:</span> <span class="mi">4</span><span class="p">}})</span>
-</pre></div>
-
-<p>or as a reference to parameterless function which will be called at the point the document is saved:</p>
-
-<div class="highlight highlight-python"><pre><span class="kn">import</span> <span class="nn">datetime</span>
-<span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"created_date"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="s">"default"</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">}})</span>
-</pre></div>
-
-<h3>
-<a name="validation" class="anchor" href="#validation"><span class="octicon octicon-link"></span></a>Validation</h3>
-
-<p>Mongothon allows you to specify validation for a field using the <code>"validates"</code> key in the field spec.
-You can specify a single validator:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"color"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">,</span> <span class="s">"validates"</span><span class="p">:</span> <span class="n">one_of</span><span class="p">(</span><span class="s">"red"</span><span class="p">,</span> <span class="s">"green"</span><span class="p">,</span> <span class="s">"blue"</span><span class="p">)}})</span>
-</pre></div>
-
-<p>or multiple validators:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"num_wheels"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s">"validates"</span><span class="p">:</span> <span class="p">[</span><span class="n">gte</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">lte</span><span class="p">(</span><span class="mi">6</span><span class="p">)]}})</span>
-</pre></div>
-
-<h4>
-<a name="provided-validators" class="anchor" href="#provided-validators"><span class="octicon octicon-link"></span></a>Provided validators</h4>
-
-<p>Mongothon provides the following validators out-of-the-box:</p>
-
-<div class="highlight highlight-python"><pre><span class="c"># Validator                         # Validates that the field...</span>
-<span class="n">gte</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>                          <span class="c"># is greater than or equal to the given value</span>
-<span class="n">lte</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>                          <span class="c"># is less than or equal to the given value</span>
-<span class="n">gt</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>                           <span class="c"># is greater than the given value</span>
-<span class="n">lt</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>                           <span class="c"># is less than the given value</span>
-<span class="n">between</span><span class="p">(</span><span class="n">min_value</span><span class="p">,</span> <span class="n">max_value</span><span class="p">)</span>       <span class="c"># is between the given min and max values</span>
-<span class="n">length</span><span class="p">(</span><span class="n">min_length</span><span class="p">,</span> <span class="p">[</span><span class="n">max_length</span><span class="p">])</span>    <span class="c"># is at least the given min length and (optionally) at most the given max length</span>
-<span class="n">match</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>                      <span class="c"># matches the given regex pattern</span>
-<span class="n">one_of</span><span class="p">(</span><span class="n">values</span><span class="o">...</span><span class="p">)</span>                   <span class="c"># is equal to one of the given values</span>
-<span class="n">is_url</span><span class="p">()</span>                            <span class="c"># is a valid URL</span>
-<span class="n">is_email</span><span class="p">()</span>                          <span class="c"># is a valid email address</span>
-</pre></div>
-
-<h4>
-<a name="creating-custom-validators" class="anchor" href="#creating-custom-validators"><span class="octicon octicon-link"></span></a>Creating custom validators</h4>
-
-<p>In addition to the provided validators it's easy to create your own custom validators.
-To create a custom validator:</p>
-
-<ul>
-<li>declare a function which accepts any arguments you want to provide to the validation algorithm</li>
-<li>the function should itself return a function which will ultimately be called by Mongothon when validating a field value. The function should:
-
-<ul>
-<li>accept a single argument - the field value being validated</li>
-<li>return nothing if the given value is valid</li>
-<li>return a string describing the validation error if the value is invalid</li>
-</ul>
-</li>
-</ul><p>Here's the declaration of an example custom validator:</p>
-
-<div class="highlight highlight-python"><pre><span class="k">def</span> <span class="nf">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
-            <span class="k">return</span> <span class="s">"String must start with </span><span class="si">%s</span><span class="s">"</span> <span class="o">%</span> <span class="n">prefix</span>
-
-<span class="c"># Usage:</span>
-<span class="n">schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"full_name"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">,</span> <span class="s">"validates"</span><span class="p">:</span> <span class="n">startswith</span><span class="p">(</span><span class="s">"Mr"</span><span class="p">)}})</span>
-</pre></div>
-
-<h3>
-<a name="nested-schemas" class="anchor" href="#nested-schemas"><span class="octicon octicon-link"></span></a>Nested schemas</h3>
-
-<p>Schemas may be nested within one another in order to describe the structure of documents containing deep graphs.</p>
-
-<p>Nested can either be declared inline:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">blog_post_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
-    <span class="s">"author"</span><span class="p">:</span>   <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="n">Schema</span><span class="p">({</span><span class="s">"first_name"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">},</span> <span class="s">"last_name"</span><span class="p">:</span> <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">}})},</span>
-    <span class="s">"title"</span><span class="p">:</span>    <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">},</span>
-    <span class="s">"content"</span><span class="p">:</span>  <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">}</span>
-<span class="p">})</span>
-
-</pre></div>
-
-<p>or declared in isolation and then referenced (and potentially reused between multiple parent schemas):</p>
-
-<div class="highlight highlight-python"><pre><span class="n">name_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
-    <span class="s">"first_name"</span><span class="p">:</span>   <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">},</span>
-    <span class="s">"last_name"</span><span class="p">:</span>    <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">}</span>
-<span class="p">})</span>
-
-<span class="n">blog_post_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
-    <span class="s">"author"</span><span class="p">:</span>   <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="n">name_schema</span><span class="p">},</span>
-    <span class="s">"title"</span><span class="p">:</span>    <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">},</span>
-    <span class="s">"content"</span><span class="p">:</span>  <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">}</span>
-<span class="p">})</span>
-
-<span class="n">comment_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
-    <span class="s">"author"</span><span class="p">:</span>   <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="n">name_schema</span><span class="p">,</span> <span class="s">"required"</span><span class="p">:</span><span class="bp">True</span><span class="p">},</span>
-    <span class="s">"comment"</span><span class="p">:</span>  <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="n">base_string</span><span class="p">}</span>
-<span class="p">})</span>
-
-</pre></div>
-
-<p>In each case the nested schema is provided as the <code>type</code> parameter in the parent field's spec and can be declared as <code>"required"=True</code> if so desired. Any validation present within the nested schema is applied wherever the schema
-is used.</p>
-
-<h3>
-<a name="embedded-collections" class="anchor" href="#embedded-collections"><span class="octicon octicon-link"></span></a>Embedded collections</h3>
-
-<p>As well as nesting schemas directly under fields, Mongothon supports embedded collections within documents. To declare an embedded collection, simply declare the type of the embedded items using Python list syntax:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">line_item_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
-    <span class="s">"price"</span><span class="p">:</span>        <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s">"required"</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
-    <span class="s">"item_name"</span><span class="p">:</span>    <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">,</span> <span class="s">"required"</span><span class="p">:</span> <span class="bp">True</span><span class="p">}</span>
-<span class="p">})</span>
-
-<span class="n">order_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
-    <span class="s">"line_items"</span><span class="p">:</span>   <span class="p">[</span><span class="n">line_item_schema</span><span class="p">]</span>
-    <span class="s">"total_due"</span><span class="p">:</span>    <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">}</span>
-<span class="p">})</span>
-</pre></div>
-
-<p>Simple primitive types can be embedded as well as full schemas:</p>
-
-<div class="highlight highlight-python"><pre><span class="n">bookmark_schema</span> <span class="o">=</span> <span class="n">Schema</span><span class="p">({</span>
-    <span class="s">"url"</span><span class="p">:</span>      <span class="p">{</span><span class="s">"type"</span><span class="p">:</span> <span class="nb">basestring</span><span class="p">},</span>
-    <span class="s">"tags"</span><span class="p">:</span>     <span class="p">[</span><span class="nb">basestring</span><span class="p">]</span>
-<span class="p">})</span>
-</pre></div>
+<p>For convenience, Mongothon offers it's own <code>Schema</code> subclass which includes standard Schemer functionality but adds support for Mongo "_id" fields.</p>
 
 <h2>
 <a name="models" class="anchor" href="#models"><span class="octicon octicon-link"></span></a>Models</h2>
@@ -317,6 +150,7 @@ is used.</p>
 <p>Model classes can be used to find individual documents by ID:</p>
 
 <div class="highlight highlight-python"><pre><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">find_by_id</span><span class="p">(</span><span class="n">some_id</span><span class="p">)</span>  <span class="c"># returns an instance of Order</span>
+                                   <span class="c"># or throws NotFoundException</span>
 </pre></div>
 
 <p>or using a search condition:</p>
@@ -332,9 +166,34 @@ is used.</p>
 <h4>
 <a name="updating-documents" class="anchor" href="#updating-documents"><span class="octicon octicon-link"></span></a>Updating documents</h4>
 
-<p>Model classes can be used to perform updates on the collection:</p>
+<p>Mongothon two mechanisms to run updates against documents.</p>
 
-<div class="highlight highlight-python"><pre><span class="n">Order</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">'total_due'</span><span class="p">:</span> <span class="p">{</span><span class="s">'$gte'</span><span class="p">:</span> <span class="s">'10'</span><span class="p">}},</span> <span class="p">{</span><span class="s">'$unset'</span><span class="p">:</span> <span class="p">{</span><span class="s">'line_items'</span><span class="p">:</span> <span class="mi">1</span><span class="p">}})</span>
+<h5>
+<a name="modelupdate-static-method" class="anchor" href="#modelupdate-static-method"><span class="octicon octicon-link"></span></a><code>Model.update</code> (static method)</h5>
+
+<p>The class method version of <code>update</code> is essentially a proxy for the underlying Pymongo collection object's <code>update</code> method and can be
+called as such.</p>
+
+<div class="highlight highlight-python"><pre><span class="n">Order</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">'total_due'</span><span class="p">:</span> <span class="p">{</span><span class="s">'$gte'</span><span class="p">:</span> <span class="mi">700</span><span class="p">}},</span> <span class="p">{</span><span class="s">'$unset'</span><span class="p">:</span> <span class="p">{</span><span class="s">'line_items'</span><span class="p">:</span> <span class="mi">1</span><span class="p">}})</span>
+</pre></div>
+
+<h5>
+<a name="modelupdate_instance-instance-method" class="anchor" href="#modelupdate_instance-instance-method"><span class="octicon octicon-link"></span></a><code>model.update_instance</code> (instance method)</h5>
+
+<p>The instance method <code>update_instance</code> makes it easy to run an update statement against the current model document by defaulting the <code>query</code> used to <code>{'_id': self['_id']}</code>.</p>
+
+<div class="highlight highlight-python"><pre><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">find_by_id</span><span class="p">(</span><span class="n">some_id</span><span class="p">)</span>
+<span class="n">order</span><span class="o">.</span><span class="n">update_instance</span><span class="p">({</span><span class="s">'$unset'</span><span class="p">:</span> <span class="p">{</span><span class="s">'line_items'</span><span class="p">:</span> <span class="mi">1</span><span class="p">}})</span>
+</pre></div>
+
+<h6>
+<a name="note" class="anchor" href="#note"><span class="octicon octicon-link"></span></a>Note</h6>
+
+<p><code>model.update</code> (instance method) will delegate to python's dictionary API:</p>
+
+<div class="highlight highlight-python"><pre><span class="n">order</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">find_by_id</span><span class="p">(</span><span class="n">some_id</span><span class="p">)</span>
+<span class="n">order</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s">'line_items'</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="k">print</span> <span class="n">order</span><span class="p">[</span><span class="s">'line_items'</span><span class="p">]</span>  <span class="c"># 1</span>
 </pre></div>
 
 <h4>
@@ -375,6 +234,14 @@ is used.</p>
 </pre></div>
 
 <h4>
+<a name="validating-documents" class="anchor" href="#validating-documents"><span class="octicon octicon-link"></span></a>Validating documents</h4>
+
+<p>You can validate a document against its Schema by simply calling <code>validate</code> on the document instance:</p>
+
+<div class="highlight highlight-python"><pre><span class="n">order</span><span class="o">.</span><span class="n">validate</span><span class="p">()</span>  <span class="c"># raises a ValidationException is the document is invalid</span>
+</pre></div>
+
+<h4>
 <a name="saving-documents" class="anchor" href="#saving-documents"><span class="octicon octicon-link"></span></a>Saving documents</h4>
 
 <p>In order to persist document changes to the DB, the model can be saved:</p>
@@ -407,7 +274,7 @@ In all cases, saving a document results in schema defaults being applied where a
 <h4>
 <a name="custom-instance-methods" class="anchor" href="#custom-instance-methods"><span class="octicon octicon-link"></span></a>Custom instance methods</h4>
 
-<p>Custom instance methods can be added to a model using the model's <code>instance_method</code> decorator. This comes in useful when you want to wrap up common operations on a document:</p>
+<p>Custom instance methods can be added to a model using the model's <code>instance_method</code> decorator. This comes in handy when you want to wrap up common operations on a document:</p>
 
 <div class="highlight highlight-python"><pre><span class="nd">@Order.instance_method</span>
 <span class="k">def</span> <span class="nf">add_line_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">price</span><span class="p">):</span>
@@ -434,10 +301,59 @@ In all cases, saving a document results in schema defaults being applied where a
     <span class="k">return</span> <span class="p">{</span><span class="s">"items"</span><span class="p">:</span> <span class="p">{</span><span class="s">"$size"</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
 
 <span class="c"># Obtains a list of orders which were created before 20120101 which have a single line item.</span>
-<span class="n">orders</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">single_item</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="n">orders</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">before</span><span class="p">(</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2012</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">single_item</span><span class="p">()</span>
 </pre></div>
 
 <h4>
+<a name="combining-queries-with-nested-criteria" class="anchor" href="#combining-queries-with-nested-criteria"><span class="octicon octicon-link"></span></a>Combining queries with nested criteria</h4>
+
+<p>When dealing with multiple chained scopes, Mongothon uses a "deep merge, last query wins" approach to combine multiple query dicts into a single query dicts. This ensures that queries with nested query elements may be combined just as easily as simple key-value queries.</p>
+
+<p>Examples:</p>
+
+<div class="highlight highlight-python"><pre><span class="nd">@Order.scope</span>
+<span class="k">def</span> <span class="nf">item_priced_lt</span><span class="p">(</span><span class="n">price</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s">"items"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"$elemMatch"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">"price"</span><span class="p">:</span> <span class="p">{</span><span class="s">"$lt"</span><span class="p">:</span> <span class="n">price</span><span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}}</span>
+
+<span class="nd">@Order.scope</span>
+<span class="k">def</span> <span class="nf">item_priced_gt</span><span class="p">(</span><span class="n">price</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s">"items"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"$elemMatch"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">"price"</span><span class="p">:</span> <span class="p">{</span><span class="s">"$gt"</span><span class="p">:</span> <span class="n">price</span><span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}}</span>
+
+<span class="nd">@Order.scope</span>
+<span class="k">def</span> <span class="nf">item_named</span><span class="p">(</span><span class="n">name</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s">"items"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">"$elemMatch"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">"name"</span><span class="p">:</span> <span class="n">name</span>
+        <span class="p">}</span>
+    <span class="p">}}</span>
+
+<span class="n">orders</span> <span class="o">=</span> <span class="n">Order</span><span class="o">.</span><span class="n">item_named</span><span class="p">(</span><span class="s">'iPhone'</span><span class="p">)</span><span class="o">.</span><span class="n">item_priced_lt</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span><span class="o">.</span><span class="n">item_priced_gt</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="c"># Resultant query:</span>
+<span class="c">#   {"items": {</span>
+<span class="c">#       "$elemMatch": {</span>
+<span class="c">#           "name": "iPhone",</span>
+<span class="c">#           "price": {"$gt": 200, "$lt": 500}</span>
+<span class="c">#       }</span>
+<span class="c">#   }}</span>
+
+</pre></div>
+
+<p>Other notes:</p>
+
+<ul>
+<li>If you have multiple queries specifying a list of values (e.g. as part of an $in statement) for the same field, Mongothon will combine the two lists for you. <code>{'tags': {'$in': ['red', 'blue']}</code> + <code>{'tags': {'$in': ['green', 'blue']}</code> =&gt; <code>{'tags': {'$in': ['red', 'blue', 'green']}</code>
+</li>
+<li>Even with deep merging, if you attempt to combine two queries which specify different values for matching a field, the last scope in the chain will win.</li>
+</ul><h4>
 <a name="implementing-scope-functions" class="anchor" href="#implementing-scope-functions"><span class="octicon octicon-link"></span></a>Implementing scope functions</h4>
 
 <p>A "scope" function is simply a function which returns up to three return values:</p>
@@ -471,42 +387,205 @@ In all cases, saving a document results in schema defaults being applied where a
 
 <p>Scope functions, once registered to a given model, can be called on the model class to dynamically build up a query context in a chainable manner.</p>
 
-<p>Once the query context has been built it can be executed as an actual query against the database by calling <code>execute()</code>.</p>
+<p>Once the query context has been built up, it will executed as soon as the caller attempts to access the results.</p>
 
 <div class="highlight highlight-python"><pre><span class="c"># Finds all BlogPosts with a given author, only returning their IDs</span>
-<span class="n">posts</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="o">.</span><span class="n">author</span><span class="p">(</span><span class="s">"bob"</span><span class="p">)</span><span class="o">.</span><span class="n">id_only</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>
+<span class="n">posts</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="o">.</span><span class="n">author</span><span class="p">(</span><span class="s">"bob"</span><span class="p">)</span><span class="o">.</span><span class="n">id_only</span><span class="p">()</span>
+
+<span class="c"># The actual query is only executed against Mongo when we attempt access</span>
+<span class="n">first</span> <span class="o">=</span> <span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </pre></div>
 
-<p>The builder API which allows scopes to be chained together in this manner also implements a Python iterator which will call <code>execute()</code> behind the scenes if you attempt to index into it:</p>
+<p>The builder API which allows scopes to be chained together in this manner implements the Python iterator protocol as well:</p>
 
 <div class="highlight highlight-python"><pre><span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">BlogPost</span><span class="o">.</span><span class="n">author</span><span class="p">(</span><span class="s">"bob"</span><span class="p">)</span><span class="o">.</span><span class="n">id_only</span><span class="p">():</span>
     <span class="c"># Do something</span>
 </pre></div>
 
-<h3>
-<a name="middleware" class="anchor" href="#middleware"><span class="octicon octicon-link"></span></a>Middleware</h3>
+<p>You can call any pymongo <code>Cursor</code> method via the scope builder:</p>
 
-<p>Models allow you to register middleware functions which will be passed flow control at various specific points in the lifecycle of a model.</p>
+<div class="highlight highlight-python"><pre><span class="n">num_posts_by_bob</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="o">.</span><span class="n">author</span><span class="p">(</span><span class="s">"bob"</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
 
-<p>Currently supported middleware events are:</p>
-
-<p><code>before_save</code> - called just before a document is saved
-<code>after_save</code> - called just after a document is saved
-<code>before_validate</code> - called just before a document is validated
-<code>after_validate</code> - called just after a document is validated</p>
-
-<p>In each case the registered middleware function will be passed the document object.</p>
-
-<p>Example:</p>
-
-<div class="highlight highlight-python"><pre><span class="k">def</span> <span class="nf">log_saved</span><span class="p">(</span><span class="n">doc</span><span class="p">):</span>
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Saved order {0}"</span><span class="p">,</span> <span class="n">doc</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span>
-
-<span class="c"># Register the function</span>
-<span class="n">Order</span><span class="o">.</span><span class="n">after_save</span><span class="p">(</span><span class="n">log_saved</span><span class="p">)</span>
+<span class="n">ten_posts_by_bob</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="o">.</span><span class="n">author</span><span class="p">(</span><span class="s">"bob"</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 
-<p>There is no limit to the number of middleware functions which can be registered.</p>
+<p>Furthermore, scopes can be further refined even after you have performed access on them:</p>
+
+<div class="highlight highlight-python"><pre><span class="n">posts</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="o">.</span><span class="n">author</span><span class="p">(</span><span class="s">'bob'</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">"Bob has written a total of {} posts"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">posts</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+
+<span class="n">gardening_posts</span> <span class="o">=</span> <span class="n">posts</span><span class="o">.</span><span class="n">tagged</span><span class="p">(</span><span class="s">'gardening'</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">"{} of these are about gardening"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">gardening_posts</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+</pre></div>
+
+<h3>
+<a name="events" class="anchor" href="#events"><span class="octicon octicon-link"></span></a>Events</h3>
+
+<p>Mongothon Models emit events at various points in the lifecycle of a model instance. You can register one or more handler functions for a given event against the model class. These functions are then invoked at the point a model instance emits the event.</p>
+
+<p>To register a function to receive an event, use the <code>on</code> model class method, either by calling it directly passing your handler function, or as a decorator:</p>
+
+<div class="highlight highlight-python"><pre>
+<span class="k">def</span> <span class="nf">log_save</span><span class="p">(</span><span class="n">blog_post</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Blog post {} was saved!'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blog_post</span><span class="p">[</span><span class="s">'_id'</span><span class="p">]))</span>
+
+<span class="c"># Register the handler function</span>
+<span class="n">BlogPost</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="s">'did_save'</span><span class="p">,</span> <span class="n">log_save</span><span class="p">)</span>
+
+<span class="o">...</span>
+
+<span class="nd">@BlogPost.on</span><span class="p">(</span><span class="s">'did_save'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_save</span><span class="p">(</span><span class="n">blog_post</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Blog post {} was saved!'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blog_post</span><span class="p">[</span><span class="s">'_id'</span><span class="p">]))</span>
+</pre></div>
+
+<h4>
+<a name="implementing-handler-functions" class="anchor" href="#implementing-handler-functions"><span class="octicon octicon-link"></span></a>Implementing handler functions</h4>
+
+<p>A valid event handler function should always expect to receive:</p>
+
+<ul>
+<li>the model instance from which the event is being emitted as it's first argument</li>
+<li>any other specific arguments associated with the given event (see below for a list of standard events and their additional arguments).</li>
+</ul><div class="highlight highlight-python"><pre><span class="nd">@BlogPost.on</span><span class="p">(</span><span class="s">'did_remove'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_remove</span><span class="p">(</span><span class="n">blog_post</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Blog post {} was removed!'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blog_post</span><span class="p">[</span><span class="s">'_id'</span><span class="p">]))</span>
+
+<span class="nd">@BlogPost.on</span><span class="p">(</span><span class="s">'did_update'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_update</span><span class="p">(</span><span class="n">blog_post</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Blog post {} was updated using document'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blog_post</span><span class="p">[</span><span class="s">'_id'</span><span class="p">],</span> <span class="n">document</span><span class="p">))</span>
+
+</pre></div>
+
+<p>When emitting custom events (see below for more details), this allows essentially any arguments to be passed to all handlers registered for that event.</p>
+
+<div class="highlight highlight-python"><pre><span class="nd">@BlogPost.on</span><span class="p">(</span><span class="s">'archived'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_archived</span><span class="p">(</span><span class="n">blog_post</span><span class="p">,</span> <span class="n">archived_by</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">'Blog post {} was archived by {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">blog_post</span><span class="p">[</span><span class="s">'_id'</span><span class="p">],</span> <span class="n">archived_by</span><span class="p">))</span>
+
+<span class="o">...</span>
+
+<span class="k">def</span> <span class="nf">archive_blog_post</span><span class="p">(</span><span class="n">post_id</span><span class="p">,</span> <span class="n">user_email</span><span class="p">):</span>
+    <span class="n">blog_post</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="o">.</span><span class="n">find_by_id</span><span class="p">(</span><span class="n">post_id</span><span class="p">)</span>
+    <span class="n">blog_post</span><span class="p">[</span><span class="s">'archived'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">blog_post</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="n">blog_post</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">'archived'</span><span class="p">,</span> <span class="n">archived_by</span><span class="o">=</span><span class="n">user_email</span><span class="p">)</span>
+</pre></div>
+
+<h4>
+<a name="standard-events" class="anchor" href="#standard-events"><span class="octicon octicon-link"></span></a>Standard events</h4>
+
+<p>Every Mongothon model emits the following events as part of its lifecycle:</p>
+
+<table>
+<thead><tr>
+<th>Event</th>
+<th>Additional args</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code>'did_init'</code></td>
+<td>None</td>
+<td>Emitted whenever a new model object instance is initialized.</td>
+</tr>
+<tr>
+<td><code>'did_find'</code></td>
+<td>None</td>
+<td>Emitted when a model object is instantiated as the result of database lookup. Fires after <code>'did_init'</code>.</td>
+</tr>
+<tr>
+<td>
+<code>'will_validate</code>'</td>
+<td>
+<code>working</code> - the working copy of the <code>Model</code> instance.</td>
+<td>Emitted just before a model is validated against it's schema.</td>
+</tr>
+<tr>
+<td>
+<code>'did_validate</code>'</td>
+<td>
+<code>working</code> - the working copy of the <code>Model</code> instance.</td>
+<td>Emitted just after a model is validated against it's schema.</td>
+</tr>
+<tr>
+<td><code>'will_apply_defaults'</code></td>
+<td>None</td>
+<td>Emitted just before defaults (from the associated schema) are applied to the <code>Model</code> instance .</td>
+</tr>
+<tr>
+<td><code>'did_apply_defaults'</code></td>
+<td>None</td>
+<td>Emitted just after defaults (from the associated schema) are applied to the <code>Model</code> instance .</td>
+</tr>
+<tr>
+<td><code>'will_save'</code></td>
+<td>
+<code>working</code> - the working copy of the <code>Model</code> instance.</td>
+<td>Emitted just before a model is saved to the database. Fires <em>after</em> validation (and it's associated events).</td>
+</tr>
+<tr>
+<td><code>'did_save'</code></td>
+<td>None</td>
+<td>Emitted just after a model is saved to the database.</td>
+</tr>
+<tr>
+<td><code>'will_update'</code></td>
+<td>All arguments provided to <code>update_instance()</code>.</td>
+<td>Emitted just before an <code>update</code> is performed for the given model instance.</td>
+</tr>
+<tr>
+<td><code>'did_update'</code></td>
+<td>All arguments provided to <code>update_instance()</code>.</td>
+<td>Emitted just after an <code>update</code> is performed for the given model instance.</td>
+</tr>
+<tr>
+<td><code>'will_remove'</code></td>
+<td>All arguments provided to <code>remove()</code>.</td>
+<td>Emitted just before an <code>remove</code> is performed for the given model instance.</td>
+</tr>
+<tr>
+<td><code>'did_remove'</code></td>
+<td>All arguments provided to <code>reomve()</code>.</td>
+<td>Emitted just after an <code>remove</code> is performed for the given model instance.</td>
+</tr>
+</tbody>
+</table><h5>
+<a name="working-copy-event-arguments" class="anchor" href="#working-copy-event-arguments"><span class="octicon octicon-link"></span></a>Working copy event arguments</h5>
+
+<p><code>'will_validate'</code>, <code>'did_validate'</code> and <code>'will_save'</code> events include a <code>working</code> argument which is a working copy of the model instance. To properly understand what this argument is, it is useful to think about the steps Mongothon goes through when saving a Mongothon <code>Model</code> instance:</p>
+
+<ol>
+<li>A working (deep) copy of the model instance is created.</li>
+<li>Any schema default values are applied to the working copy, without affecting the primary object instance.</li>
+<li>The working copy is validated against the model's schema.</li>
+<li>If validation passes, an attempt is made to save the working copy to the underlying database collection.</li>
+<li>If the database save operation succeeds, the working copy is merged back into the primary object instance so that it reflects the document in the collection.</li>
+</ol><p>So for these events which receive the <code>working</code> argument, depending on the model's schema it is possible that this object may contain different values to the primary model instance.</p>
+
+<p>Also note that if you want to implement any universal "pre-save" updates to the model just before it is saved (e.g. updating a 'modified' timestamp), you can do this simply by manipulating the working copy.</p>
+
+<h4>
+<a name="emitting-custom-events" class="anchor" href="#emitting-custom-events"><span class="octicon octicon-link"></span></a>Emitting custom events</h4>
+
+<p>As well as the standard set of events listed above which are emitted by models, it's also possible to use the <code>Model</code> event bus for any custom events you want to emit.</p>
+
+<p>To emit a custom event, just invoke <code>emit</code> on a give  model instance passing a string to identify the type of event, along with any custom arguments which are relevant to that event.</p>
+
+<p>(Note that you don't need to pass the model instance itself as an argument to <code>emit</code>).</p>
+
+<div class="highlight highlight-python"><pre><span class="n">post</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="o">.</span><span class="n">find_by_id</span><span class="p">(</span><span class="n">post_id</span><span class="p">)</span>
+<span class="n">post</span><span class="o">.</span><span class="n">emit</span><span class="p">(</span><span class="s">'loaded'</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">())</span>
+</pre></div>
+
+<p>Generally speaking, rather than emitting events directly from your model-consuming code, a better pattern is to implement an <code>@instance_method</code> on your <code>Model</code> which wraps up some operation and emit an event from within that method.</p>
+
+<p>To handle a custom event, just register a handler function in the same way you would for a standard event:</p>
+
+<div class="highlight highlight-python"><pre><span class="n">BlogPost</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="s">'loaded'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">log_load</span><span class="p">(</span><span class="n">post</span><span class="p">,</span> <span class="n">loaded_time</span><span class="p">):</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">'Loaded post {} at {}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">post</span><span class="p">[</span><span class="s">'_id'</span><span class="p">],</span> <span class="n">loaded_time</span><span class="p">))</span>
+</pre></div>
 
 <h3>
 <a name="model-state" class="anchor" href="#model-state"><span class="octicon octicon-link"></span></a>Model State</h3>
