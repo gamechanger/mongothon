@@ -1,6 +1,6 @@
 from mongothon.queries import ScopeBuilder
 from unittest import TestCase
-from mock import Mock
+from mock import Mock, call
 from .fake import FakeCursor
 
 class TestScopeBuilder(TestCase):
@@ -212,6 +212,37 @@ class TestScopeBuilder(TestCase):
         mock_model.find.assert_called_once_with(
             {"thing": "blah", "woo": "ha"},
             None)
+
+    def test_extending_scope_chain_after_cursor_access(self):
+        mock_model = Mock()
+        cursor_a = FakeCursor([{'_id': 1}, {'_id': 2}])
+        cursor_b = FakeCursor([{'_id': 1}])
+
+        mock_model.find.side_effect = [cursor_a, cursor_b]
+
+        def scope_a():
+            return {"thing": "blah"}
+
+        def scope_b():
+            return {"woo": "ha"}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        result_a = bldr.scope_a()
+
+        self.assertEqual(result_a.count(), 2)
+        self.assertEqual(result_a[1], {'_id': 2})
+        self.assertEqual(result_a.limit(1), cursor_a)
+
+        result_b = result_a.scope_b()
+        self.assertEqual(result_b.count(), 1)
+        self.assertEqual(result_b[0], {'_id': 1})
+        self.assertEqual(result_b.limit(1), cursor_b)
+
+        self.assertEqual([
+            call({"thing": "blah"}, None),
+            call({"thing": "blah", "woo": "ha"}, None)
+        ], mock_model.find.mock_calls)
+
 
     def test_unpack_scope_with_just_query(self):
         bldr = ScopeBuilder(Mock(), [])
