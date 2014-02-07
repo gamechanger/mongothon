@@ -99,7 +99,3 @@ class ScopeBuilder(object):
         # which will mean executing it.
         if hasattr(self.cursor, key):
             return getattr(self.cursor, key)
-
-    def execute(self):
-        """Executes the currently built up query."""
-        return self.cursor

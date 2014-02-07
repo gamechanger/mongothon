@@ -120,7 +120,7 @@ class TestScopeBuilder(TestCase):
                                               {"$elemMatch": {"num": 100}}]}},
                           bldr.query)
 
-    def test_calls_back_to_model_on_execute(self):
+    def test_calls_back_to_model_when_getting_cursor(self):
         mock_model = Mock()
         cursor = Mock()
         mock_model.find.return_value = cursor
@@ -132,7 +132,7 @@ class TestScopeBuilder(TestCase):
             return {"woo": "ha"}, {"icecube": 1}
 
         bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
-        results = bldr.scope_a().scope_b().execute()
+        results = bldr.scope_a().scope_b().cursor
         mock_model.find.assert_called_once_with(
             {"thing": "blah", "woo": "ha"},
             {"icecube": 1},

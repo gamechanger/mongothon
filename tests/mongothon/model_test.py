@@ -438,7 +438,7 @@ class TestModel(TestCase):
 
         cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
         self.mock_collection.find.return_value = cursor
-        cars = self.Car.hatchback().with_ac().execute()
+        cars = self.Car.hatchback().with_ac()
         self.assertIsInstance(cars[0], self.Car)
         self.mock_collection.find.assert_called_once_with(
             {"trim.ac": True, "trim.doors": {"$in": [3, 5]}},
