@@ -321,28 +321,116 @@ for post in BlogPost.author("bob").id_only():
     # Do something
 ```
 
-### Middleware
+### Events
 
-Models allow you to register middleware functions which will be passed flow control at various specific points in the lifecycle of a model.
+Mongothon Models emit events at various points in the lifecycle of a model instance. You can register one or more handler functions for a given event against the model class. These functions are then invoked at the point a model instances emits the event.
 
-Currently supported middleware events are:
+To register a function to receive an event, use the `on` model class method, either by calling it directly passing your handler function, or as a decorator:
 
-`before_save` - called just before a document is saved
-`after_save` - called just after a document is saved
-`before_validate` - called just before a document is validated
-`after_validate` - called just after a document is validated
-
-In each case the registered middleware function will be passed the document object.
-
-Example:
 ```python
-def log_saved(doc):
-    logging.info("Saved order {0}", doc._id)
 
-# Register the function
-Order.after_save(log_saved)
+def log_save(blog_post):
+    logging.info('Blog post {} was saved!'.format(blog_post['_id']))
+
+# Register the handler function
+BlogPost.on('did_save', log_save)
+
+...
+
+@BlogPost.on('did_save')
+def log_save(blog_post):
+    logging.info('Blog post {} was saved!'.format(blog_post['_id']))
 ```
-There is no limit to the number of middleware functions which can be registered.
+
+#### Implementing handler functions
+
+A valid event handler function should always expect to receive:
+ - the model instance from which the event is being emitted as it's first argument
+ - any other specific arguments associated with the given event (see below for a list of standard events and their additional arguments).
+
+```python
+@BlogPost.on('did_remove')
+def log_remove(blog_post, *args, **kwargs):
+    logging.info('Blog post {} was removed!'.format(blog_post['_id']))
+
+@BlogPost.on('did_update')
+def log_update(blog_post, document, *args, **kwargs):
+    logging.info('Blog post {} was updated using document'.format(blog_post['_id'], document))
+
+```
+
+When emitting custom events (see below for more details), this allows essentially any arguments to be passed to all handlers registered for that event.
+
+```python
+@BlogPost.on('archived')
+def log_archived(blog_post, archived_by):
+    logging.info('Blog post {} was archived by {}'.format(blog_post['_id'], archived_by))
+
+...
+
+def archive_blog_post(post_id, user_email):
+    blog_post = BlogPost.find_by_id(post_id)
+    blog_post['archived'] = True
+    blog_post.save()
+    blog_post.emit('archived', archived_by=user_email)
+```
+
+#### Standard events
+
+Every Mongothon model emits the following events as part of its lifecycle:
+
+| Event | Additional args | Description |
+| ----- | --------------- | ----------- |
+| `'did_init'` | None | Emitted whenever a new model object instance is initialized. |
+| `'did_find'` | None | Emitted when a model object is instantiated as the result of database lookup. Fires after `'did_init'`. |
+| `'will_validate`' | `working` - the working copy of the `Model` instance. | Emitted just before a model is validated against it's schema. |
+| `'did_validate`' | `working` - the working copy of the `Model` instance. | Emitted just after a model is validated against it's schema. |
+| `'will_apply_defaults'` | None | Emitted just before defaults (from the associated schema) are applied to the `Model` instance .|
+| `'did_apply_defaults'` | None | Emitted just after defaults (from the associated schema) are applied to the `Model` instance .|
+| `'will_save'` | `working` - the working copy of the `Model` instance. | Emitted just before a model is saved to the database. Fires _after_ validation (and it's associated events). |
+| `'did_save'` | None | Emitted just after a model is saved to the database. |
+| `'will_update'` | All arguments provided to `update_instance()`. | Emitted just before an `update` is performed for the given model instance. |
+| `'did_update'` | All arguments provided to `update_instance()`. | Emitted just after an `update` is performed for the given model instance. |
+| `'will_remove'` | All arguments provided to `remove()`. | Emitted just before an `remove` is performed for the given model instance. |
+| `'did_remove'` | All arguments provided to `reomve()`. | Emitted just after an `remove` is performed for the given model instance. |
+
+
+##### Working copy event arguments
+
+`'will_validate'`, `'did_validate`' and '`will_save`' events include a `working` argument which is a working copy of the model instance. To properly understand what this argument is, it is useful to think about the steps Mongothon goes through when saving a Mongothon `Model` instance:
+
+1. A working (deep) copy of the model instance is created.
+2. Any schema default values are applied to the working copy, without affecting the primary object instance.
+3. The working copy is validated against the model's schema.
+4. If validation passes, an attempt is made to save the working copy to the underlying database collection.
+5. If the database save operation succeeds, the working copy is merged back into the primary object instance so that it reflects the document in the collection.
+
+So for these events which receive the `working` argument, depending on the model's schema it is possible that this object may contain different values to the primary model instance.
+
+Also note that if you want to implement any universal "pre-save" updates to the model just before it is saved (e.g. updating a 'modified' timestamp), you can do this simply by manipulating the working copy.
+
+#### Emitting custom events
+
+As well as the standard set of events listed above which are emitted by models, it's also possible to use the `Model` event bus for any custom events you want to emit.
+
+To emit a custom event, just invoke `emit` on a give  model instance passing a string to identify the type of event, along with any custom arguments which are relevant to that event.
+
+(Note that you don't need to pass the model instance itself as an argument to `emit`).
+
+```python
+post = BlogPost.find_by_id(post_id)
+post.emit('loaded', datetime.utcnow())
+```
+
+Generally speaking, rather than emitting events directly from your model-consuming code, a better pattern is to implement an `@instance_method` on your `Model` which wraps up some operation and emit an event from within that method.
+
+To handle a custom event, just register a handler function in the same way you would for a standard event:
+
+```python
+BlogPost.on('loaded')
+def log_load(post, loaded_time):
+    logging.debug('Loaded post {} at {}'.format(post['_id'], loaded_time))
+```
 
 
 ### Model State
