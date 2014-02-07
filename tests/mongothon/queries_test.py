@@ -176,6 +176,25 @@ class TestScopeBuilder(TestCase):
             {"thing": "blah", "woo": "ha"},
             None)
 
+    def test_convert_to_list(self):
+        mock_model = Mock()
+        cursor = FakeCursor([{'_id': 1}, {'_id': 2}])
+        mock_model.find.return_value = cursor
+
+        def scope_a():
+            return {"thing": "blah"}
+
+        def scope_b():
+            return {"woo": "ha"}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        lst = list(bldr.scope_a().scope_b())
+        self.assertEqual([{'_id': 1}, {'_id': 2}], lst)
+        mock_model.find.assert_called_once_with(
+            {"thing": "blah", "woo": "ha"},
+            None)
+
+
 
     def test_unpack_scope_with_just_query(self):
         bldr = ScopeBuilder(Mock(), [])
