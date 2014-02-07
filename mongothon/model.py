@@ -32,7 +32,7 @@ class Model(Document):
     def __init__(self, inital_doc=None, initial_state=NEW):
         self._state = initial_state
         super(Model, self).__init__(inital_doc)
-        self.emit('after_init')
+        self.emit('did_init')
 
     def _create_working(self):
         working = deepcopy(self)
@@ -78,9 +78,9 @@ class Model(Document):
         self._do_validate(self._create_working())
 
     def _do_validate(self, document):
-        self.emit('before_validate', document)
+        self.emit('will_validate', document)
         self.schema.validate(document)
-        self.emit('after_validate', document)
+        self.emit('did_validate', document)
 
     def apply_defaults(self):
         """Apply schema defaults to this document."""
@@ -91,13 +91,13 @@ class Model(Document):
         working = self._create_working()
         self._do_validate(working)
 
-        self.emit('before_save', working)
+        self.emit('will_save', working)
 
         # Attempt to save
         self.collection.save(working, *args, **kwargs)
         self._state = Model.PERSISTED
 
-        self.emit('after_save')
+        self.emit('did_save')
 
         # On successful completion, update from the working copy
         self.populate(working)
