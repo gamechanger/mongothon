@@ -329,36 +329,111 @@ class TestModel(TestCase):
             setattr(tracker, key, value)
         return tracker
 
-    def test_before_save_middleware(self):
-        middleware = Mock()
-        tracker = self.call_tracker(middleware=middleware, collection=self.mock_collection)
-        self.Car.before_save(middleware)
+    def test_will_save_event(self):
+        handler = Mock()
+        tracker = self.call_tracker(handler=handler, collection=self.mock_collection)
+        self.Car.on('will_save', handler)
         self.car.save()
-        self.assertEquals([call.middleware(self.car), call.collection.save(self.car)], tracker.mock_calls)
+        self.assertEquals([call.handler(self.car, self.car), call.collection.save(self.car)], tracker.mock_calls)
 
-    def test_after_save_middleware(self):
-        middleware = Mock()
-        tracker = self.call_tracker(middleware=middleware, collection=self.mock_collection)
-        self.Car.after_save(middleware)
+    def test_did_save_event(self):
+        handler = Mock()
+        tracker = self.call_tracker(handler=handler, collection=self.mock_collection)
+        self.Car.on('did_save', handler)
         self.car.save()
-        self.assertEquals([call.collection.save(self.car), call.middleware(self.car)], tracker.mock_calls)
+        self.assertEquals([call.collection.save(self.car), call.handler(self.car)], tracker.mock_calls)
 
-    def test_before_validate_middleware(self):
-        middleware = Mock()
+    def test_will_validate_event(self):
+        handler = Mock()
         car_schema.validate = Mock()
-        tracker = self.call_tracker(middleware=middleware, validate=car_schema.validate)
-        self.Car.before_validate(middleware)
+        tracker = self.call_tracker(handler=handler, validate=car_schema.validate)
+        self.Car.on('will_validate', handler)
         self.car.validate()
-        self.assertEquals([call.middleware(self.car), call.validate(self.car)], tracker.mock_calls)
+        self.assertEquals([call.handler(self.car, self.car), call.validate(self.car)], tracker.mock_calls)
 
-    def test_after_validate_middleware(self):
-        middleware = Mock()
+    def test_did_validate_event(self):
+        handler = Mock()
         car_schema.validate = Mock()
-        tracker = self.call_tracker(middleware=middleware, validate=car_schema.validate)
-        self.Car.after_validate(middleware)
+        tracker = self.call_tracker(handler=handler, validate=car_schema.validate)
+        self.Car.on('did_validate', handler)
         self.car.validate()
-        self.assertEquals([call.validate(self.car), call.middleware(self.car)], tracker.mock_calls)
+        self.assertEquals([call.validate(self.car), call.handler(self.car, self.car)], tracker.mock_calls)
 
+    def test_did_init_event(self):
+        handler = Mock()
+        self.Car.on('did_init', handler)
+        car = self.Car()
+        handler.assert_called_once_with(car)
+
+    def test_will_update_event(self):
+        handler = Mock()
+        self.Car.on('will_update', handler)
+        self.car['_id'] = 'abc'
+        self.car.update_instance({"$set": {"somefield": "somevalue"}}, safe=True)
+        handler.assert_called_once_with(self.car, {"$set": {"somefield": "somevalue"}}, safe=True)
+
+    def test_did_update_event(self):
+        handler = Mock()
+        self.Car.on('did_update', handler)
+        self.car['_id'] = 'abc'
+        self.car.update_instance({"$set": {"somefield": "somevalue"}}, safe=True)
+        handler.assert_called_once_with(self.car, {"$set": {"somefield": "somevalue"}}, safe=True)
+
+    def test_will_remove_event(self):
+        handler = Mock()
+        self.Car.on('will_remove', handler)
+        self.car['_id'] = 'abc'
+        self.car.remove(True, j=True)
+        handler.assert_called_once_with(self.car, True, j=True)
+
+    def test_did_remove_event(self):
+        handler = Mock()
+        self.Car.on('did_remove', handler)
+        self.car['_id'] = 'abc'
+        self.car.remove(True, j=True)
+        handler.assert_called_once_with(self.car, True, j=True)
+
+    def test_will_apply_defaults_event(self):
+        handler = Mock()
+        self.Car.on('will_apply_defaults', handler)
+        self.car.apply_defaults()
+        handler.assert_called_once_with(self.car)
+
+    def test_did_apply_defaults_event(self):
+        handler = Mock()
+        self.Car.on('did_apply_defaults', handler)
+        self.car.apply_defaults()
+        handler.assert_called_once_with(self.car)
+
+    def test_did_find_event(self):
+        handler = Mock()
+        self.Car.on('did_find', handler)
+        cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
+        self.mock_collection.find.return_value = cursor
+        cars = self.Car.find({'make': 'Peugeot'}, limit=2)
+        self.assertEqual([call(cars[0]), call(cars[1])], handler.mock_calls)
+
+    def test_did_find_event_not_fire_for_simple_init(self):
+        handler = Mock()
+        self.Car.on('did_find', handler)
+        self.Car()
+        self.assertFalse(handler.called)
+
+    def test_register_event_handler_with_decorator(self):
+        stub = Mock()
+
+        @self.Car.on('did_init')
+        def func(*args, **kwargs):
+            stub(*args, **kwargs)
+
+        car = self.Car()
+        stub.assert_called_once_with(car)
+
+    def test_emit_custom_event(self):
+        handler = Mock()
+        self.Car.on('fruit_explosion', handler)
+        self.car.emit('fruit_explosion', 'apples', other_fruit='oranges')
+        handler.assert_called_once_with(self.car, 'apples', other_fruit='oranges')
 
     def test_class_method_registration(self):
         response = Mock()
