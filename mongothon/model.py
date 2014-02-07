@@ -122,7 +122,9 @@ class Model(Document):
         return super(Model, self).__getattribute__(name)
 
     def remove(self, *args, **kwargs):
+        self.emit('will_remove', *args, **kwargs)
         self.collection.remove(self['_id'], *args, **kwargs)
+        self.emit('did_remove', *args, **kwargs)
         self._state = Model.DELETED
 
     @classmethod
