@@ -393,6 +393,18 @@ class TestModel(TestCase):
         self.car.remove(True, j=True)
         handler.assert_called_once_with(self.car, True, j=True)
 
+    def test_will_apply_defaults_event(self):
+        handler = Mock()
+        self.Car.on('will_apply_defaults', handler)
+        self.car.apply_defaults()
+        handler.assert_called_once_with(self.car)
+
+    def test_did_apply_defaults_event(self):
+        handler = Mock()
+        self.Car.on('did_apply_defaults', handler)
+        self.car.apply_defaults()
+        handler.assert_called_once_with(self.car)
+
     def test_emit_custom_event(self):
         handler = Mock()
         self.Car.on('fruit_explosion', handler)

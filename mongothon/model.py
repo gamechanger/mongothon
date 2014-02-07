@@ -84,7 +84,9 @@ class Model(Document):
 
     def apply_defaults(self):
         """Apply schema defaults to this document."""
+        self.emit('will_apply_defaults')
         self.schema.apply_defaults(self)
+        self.emit('did_apply_defaults')
 
     def save(self, *args, **kwargs):
         # Create a working copy of ourselves and validate it
