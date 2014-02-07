@@ -5,7 +5,7 @@ from mongothon import Document, Schema, NotFoundException
 from schemer.validators import one_of
 from bson import ObjectId
 from copy import deepcopy
-
+from .fake import FakeCursor
 
 car_schema = Schema({
     "make":                 {"type": basestring, "required": True},
@@ -54,37 +54,6 @@ doc = {
     ],
     "options": ['heated seats', 'leather steering wheel']
 }
-
-
-class FakeCursor(object):
-    def __init__(self, contents):
-        self._contents = contents
-        self._next = 0
-
-    def __getitem__(self, index):
-        return self._contents[index]
-
-    def __getattr__(self, name):
-        def return_self(*args, **kwargs):
-            return self
-
-        if name in ['rewind', 'clone', 'add_option', 'remove_option',
-                    'limit', 'batch_size', 'skip', 'max_scan', 'sort',
-                    'hint', 'where']:
-            return return_self
-
-    def __iter__(self):
-        return FakeCursor(self._contents)
-
-    def next(self):
-        if self._next >= len(self._contents):
-            raise StopIteration
-
-        self._next += 1
-        return self._contents[self._next - 1]
-
-    def count(self):
-        return len(self._contents)
 
 
 class TestModel(TestCase):

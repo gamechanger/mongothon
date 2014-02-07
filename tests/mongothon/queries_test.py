@@ -1,6 +1,7 @@
 from mongothon.queries import ScopeBuilder
 from unittest import TestCase
 from mock import Mock
+from .fake import FakeCursor
 
 class TestScopeBuilder(TestCase):
     def test_bad_scope(self):
@@ -138,10 +139,9 @@ class TestScopeBuilder(TestCase):
             sort=True)
         self.assertEquals(cursor, results)
 
-
-    def test_calls_back_to_model_on_iterate(self):
+    def test_iterate(self):
         mock_model = Mock()
-        cursor = [1, 2]
+        cursor = FakeCursor([{'_id': 1}, {'_id': 2}])
         mock_model.find.return_value = cursor
 
         def scope_a():
@@ -151,11 +151,27 @@ class TestScopeBuilder(TestCase):
             return {"woo": "ha"}
 
         bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
-        count = 0
-        for result in bldr.scope_a().scope_b():
-            count += 1
+        results = bldr.scope_a().scope_b()
+        it = results.__iter__()
+        self.assertEqual({'_id': 1}, it.next())
+        self.assertEqual({'_id': 2}, it.next())
+        mock_model.find.assert_called_once_with(
+            {"thing": "blah", "woo": "ha"},
+            None)
 
-        self.assertEquals(2, count)
+    def test_index(self):
+        mock_model = Mock()
+        cursor = FakeCursor([{'_id': 1}, {'_id': 2}])
+        mock_model.find.return_value = cursor
+
+        def scope_a():
+            return {"thing": "blah"}
+
+        def scope_b():
+            return {"woo": "ha"}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        self.assertEqual({'_id': 2}, bldr.scope_a().scope_b()[1])
         mock_model.find.assert_called_once_with(
             {"thing": "blah", "woo": "ha"},
             None)
