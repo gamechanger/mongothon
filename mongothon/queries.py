@@ -72,6 +72,7 @@ class ScopeBuilder(object):
         self.query = query
         self.projection = projection
         self.options = options
+        self._active_cursor = None
         for fn in fns:
             self.register_fn(fn)
 
@@ -81,7 +82,7 @@ class ScopeBuilder(object):
         Returns a cursor for the currently assembled query, creating it if
         it doesn't already exist.
         """
-        if not hasattr(self, "_active_cursor"):
+        if not self._active_cursor:
             self._active_cursor = self.model.find(self.query,
                                                   self.projection or None,
                                                   **self.options)
@@ -92,6 +93,12 @@ class ScopeBuilder(object):
 
     def __iter__(self):
         return self.cursor.__iter__()
+
+    def __getattr__(self, key):
+        # If the method is not one of ours, attempt to find it on the cursor
+        # which will mean executing it.
+        if hasattr(self.cursor, key):
+            return getattr(self.cursor, key)
 
     def execute(self):
         """Executes the currently built up query."""
