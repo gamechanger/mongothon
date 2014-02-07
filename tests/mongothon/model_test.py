@@ -405,6 +405,21 @@ class TestModel(TestCase):
         self.car.apply_defaults()
         handler.assert_called_once_with(self.car)
 
+    def test_did_find_event(self):
+        handler = Mock()
+        self.Car.on('did_find', handler)
+        cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
+        self.mock_collection.find.return_value = cursor
+        cars = self.Car.find({'make': 'Peugeot'}, limit=2)
+        self.assertEqual([call(cars[0]), call(cars[1])], handler.mock_calls)
+
+    def test_did_find_event_not_fire_for_simple_init(self):
+        handler = Mock()
+        self.Car.on('did_find', handler)
+        self.Car()
+        self.assertFalse(handler.called)
+
+
     def test_emit_custom_event(self):
         handler = Mock()
         self.Car.on('fruit_explosion', handler)

@@ -33,6 +33,8 @@ class Model(Document):
         self._state = initial_state
         super(Model, self).__init__(inital_doc)
         self.emit('did_init')
+        if initial_state == self.PERSISTED:
+            self.emit('did_find')
 
     def _create_working(self):
         working = deepcopy(self)
