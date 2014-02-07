@@ -323,7 +323,7 @@ for post in BlogPost.author("bob").id_only():
 
 ### Events
 
-Mongothon Models emit events at various points in the lifecycle of a model instance. You can register one or more handler functions for a given event against the model class. These functions are then invoked at the point a model instances emits the event.
+Mongothon Models emit events at various points in the lifecycle of a model instance. You can register one or more handler functions for a given event against the model class. These functions are then invoked at the point a model instance emits the event.
 
 To register a function to receive an event, use the `on` model class method, either by calling it directly passing your handler function, or as a decorator:
 
@@ -397,7 +397,7 @@ Every Mongothon model emits the following events as part of its lifecycle:
 
 ##### Working copy event arguments
 
-`'will_validate'`, `'did_validate`' and '`will_save`' events include a `working` argument which is a working copy of the model instance. To properly understand what this argument is, it is useful to think about the steps Mongothon goes through when saving a Mongothon `Model` instance:
+`'will_validate'`, `'did_validate'` and `'will_save'` events include a `working` argument which is a working copy of the model instance. To properly understand what this argument is, it is useful to think about the steps Mongothon goes through when saving a Mongothon `Model` instance:
 
 1. A working (deep) copy of the model instance is created.
 2. Any schema default values are applied to the working copy, without affecting the primary object instance.
