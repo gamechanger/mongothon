@@ -1,6 +1,7 @@
 from mongothon.queries import ScopeBuilder
 from unittest import TestCase
-from mock import Mock
+from mock import Mock, call
+from .fake import FakeCursor
 
 class TestScopeBuilder(TestCase):
     def test_bad_scope(self):
@@ -119,7 +120,7 @@ class TestScopeBuilder(TestCase):
                                               {"$elemMatch": {"num": 100}}]}},
                           bldr.query)
 
-    def test_calls_back_to_model_on_execute(self):
+    def test_calls_back_to_model_when_getting_cursor(self):
         mock_model = Mock()
         cursor = Mock()
         mock_model.find.return_value = cursor
@@ -131,17 +132,16 @@ class TestScopeBuilder(TestCase):
             return {"woo": "ha"}, {"icecube": 1}
 
         bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
-        results = bldr.scope_a().scope_b().execute()
+        results = bldr.scope_a().scope_b().cursor
         mock_model.find.assert_called_once_with(
             {"thing": "blah", "woo": "ha"},
             {"icecube": 1},
             sort=True)
         self.assertEquals(cursor, results)
 
-
-    def test_calls_back_to_model_on_iterate(self):
+    def test_iterate(self):
         mock_model = Mock()
-        cursor = [1, 2]
+        cursor = FakeCursor([{'_id': 1}, {'_id': 2}])
         mock_model.find.return_value = cursor
 
         def scope_a():
@@ -151,14 +151,97 @@ class TestScopeBuilder(TestCase):
             return {"woo": "ha"}
 
         bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
-        count = 0
-        for result in bldr.scope_a().scope_b():
-            count += 1
-
-        self.assertEquals(2, count)
+        results = bldr.scope_a().scope_b()
+        it = results.__iter__()
+        self.assertEqual({'_id': 1}, it.next())
+        self.assertEqual({'_id': 2}, it.next())
         mock_model.find.assert_called_once_with(
             {"thing": "blah", "woo": "ha"},
             None)
+
+    def test_index(self):
+        mock_model = Mock()
+        cursor = FakeCursor([{'_id': 1}, {'_id': 2}])
+        mock_model.find.return_value = cursor
+
+        def scope_a():
+            return {"thing": "blah"}
+
+        def scope_b():
+            return {"woo": "ha"}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        self.assertEqual({'_id': 2}, bldr.scope_a().scope_b()[1])
+        mock_model.find.assert_called_once_with(
+            {"thing": "blah", "woo": "ha"},
+            None)
+
+    def test_convert_to_list(self):
+        mock_model = Mock()
+        cursor = FakeCursor([{'_id': 1}, {'_id': 2}])
+        mock_model.find.return_value = cursor
+
+        def scope_a():
+            return {"thing": "blah"}
+
+        def scope_b():
+            return {"woo": "ha"}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        lst = list(bldr.scope_a().scope_b())
+        self.assertEqual([{'_id': 1}, {'_id': 2}], lst)
+        mock_model.find.assert_called_once_with(
+            {"thing": "blah", "woo": "ha"},
+            None)
+
+    def test_call_mongo_cursor_methods(self):
+        mock_model = Mock()
+        cursor = FakeCursor([{'_id': 1}, {'_id': 2}])
+        mock_model.find.return_value = cursor
+
+        def scope_a():
+            return {"thing": "blah"}
+
+        def scope_b():
+            return {"woo": "ha"}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        result = bldr.scope_a().scope_b()
+        self.assertEqual(result.count(), 2)
+        self.assertEqual(result.limit(1), cursor)
+        mock_model.find.assert_called_once_with(
+            {"thing": "blah", "woo": "ha"},
+            None)
+
+    def test_extending_scope_chain_after_cursor_access(self):
+        mock_model = Mock()
+        cursor_a = FakeCursor([{'_id': 1}, {'_id': 2}])
+        cursor_b = FakeCursor([{'_id': 1}])
+
+        mock_model.find.side_effect = [cursor_a, cursor_b]
+
+        def scope_a():
+            return {"thing": "blah"}
+
+        def scope_b():
+            return {"woo": "ha"}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b])
+        result_a = bldr.scope_a()
+
+        self.assertEqual(result_a.count(), 2)
+        self.assertEqual(result_a[1], {'_id': 2})
+        self.assertEqual(result_a.limit(1), cursor_a)
+
+        result_b = result_a.scope_b()
+        self.assertEqual(result_b.count(), 1)
+        self.assertEqual(result_b[0], {'_id': 1})
+        self.assertEqual(result_b.limit(1), cursor_b)
+
+        self.assertEqual([
+            call({"thing": "blah"}, None),
+            call({"thing": "blah", "woo": "ha"}, None)
+        ], mock_model.find.mock_calls)
 
 
     def test_unpack_scope_with_just_query(self):

@@ -227,7 +227,7 @@ def single_item():
     return {"items": {"$size": 1}}
 
 # Obtains a list of orders which were created before 20120101 which have a single line item.
-orders = Order.before(datetime(2012, 1, 1)).single_item().execute()
+orders = Order.before(datetime(2012, 1, 1)).single_item()
 ```
 
 #### Combining queries with nested criteria
@@ -260,7 +260,7 @@ def item_named(name:
         }
     }}
 
-orders = Order.item_named('iPhone').item_priced_lt(500).item_priced_gt(200).execute()
+orders = Order.item_named('iPhone').item_priced_lt(500).item_priced_gt(200)
 
 # Resultant query:
 #   {"items": {
@@ -307,18 +307,39 @@ def by_created_date():
 
 Scope functions, once registered to a given model, can be called on the model class to dynamically build up a query context in a chainable manner.
 
-Once the query context has been built it can be executed as an actual query against the database by calling `execute()`.
+Once the query context has been built up, it will executed as soon as the caller attempts to access the results.
 
 ```python
 # Finds all BlogPosts with a given author, only returning their IDs
-posts = BlogPost.author("bob").id_only().execute()
+posts = BlogPost.author("bob").id_only()
+
+# The actual query is only executed against Mongo when we attempt access
+first = posts[0]
 ```
 
-The builder API which allows scopes to be chained together in this manner also implements a Python iterator which will call `execute()` behind the scenes if you attempt to index into it:
+The builder API which allows scopes to be chained together in this manner implements the Python iterator protocol as well:
 
 ```python
 for post in BlogPost.author("bob").id_only():
     # Do something
+```
+
+You can call any pymongo `Cursor` method via the scope builder:
+
+```python
+num_posts_by_bob = BlogPost.author("bob").count()
+
+ten_posts_by_bob = BlogPost.author("bob").limit(10)
+```
+
+Furthermore, scopes can be further refined even after you have performed access on them:
+
+```python
+posts = BlogPost.author('bob')
+print "Bob has written a total of {} posts".format(posts.count())
+
+gardening_posts = posts.tagged('gardening')
+print "{} of these are about gardening".format(gardening_posts.count())
 ```
 
 ### Events

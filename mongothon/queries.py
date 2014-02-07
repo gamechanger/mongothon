@@ -72,18 +72,30 @@ class ScopeBuilder(object):
         self.query = query
         self.projection = projection
         self.options = options
+        self._active_cursor = None
         for fn in fns:
             self.register_fn(fn)
 
+    @property
+    def cursor(self):
+        """
+        Returns a cursor for the currently assembled query, creating it if
+        it doesn't already exist.
+        """
+        if not self._active_cursor:
+            self._active_cursor = self.model.find(self.query,
+                                                  self.projection or None,
+                                                  **self.options)
+        return self._active_cursor
+
     def __getitem__(self, index):
-        """Implementation of the iterator __getitem__ method. This allows the
-        builder query to be executed and iterated over without a separate call
-        to `execute()` being needed."""
-        if not hasattr(self, "in_progress_cursor"):
-            self.in_progress_cursor = self.execute()
-        return self.in_progress_cursor[index]
+        return self.cursor[index]
 
+    def __iter__(self):
+        return self.cursor.__iter__()
 
-    def execute(self):
-        """Executes the currently built up query."""
-        return self.model.find(self.query, self.projection or None, **self.options)
+    def __getattr__(self, key):
+        # If the method is not one of ours, attempt to find it on the cursor
+        # which will mean executing it.
+        if hasattr(self.cursor, key):
+            return getattr(self.cursor, key)
