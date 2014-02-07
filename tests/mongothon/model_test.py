@@ -419,6 +419,15 @@ class TestModel(TestCase):
         self.Car()
         self.assertFalse(handler.called)
 
+    def test_register_event_handler_with_decorator(self):
+        stub = Mock()
+
+        @self.Car.on('did_init')
+        def func(*args, **kwargs):
+            stub(*args, **kwargs)
+
+        car = self.Car()
+        stub.assert_called_once_with(car)
 
     def test_emit_custom_event(self):
         handler = Mock()

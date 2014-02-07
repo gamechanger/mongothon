@@ -163,11 +163,30 @@ class Model(Document):
         self.populate(self.collection.find_one(self.__class__._id_spec(self['_id'])))
 
     @classmethod
-    def on(cls, event, handler_func):
-        """Registers a handler function whenever an instance of the model
-        emits the given event.
+    def on(cls, event, handler_func=None):
         """
-        cls.handler_registrar.register(event, handler_func)
+        Registers a handler function whenever an instance of the model
+        emits the given event.
+
+        This method can either called directly, passing a function reference:
+
+            MyModel.on('did_save', my_function)
+
+        ...or as a decorator of the function to be registered.
+
+            @MyModel.on('did_save')
+            def myfunction(my_model):
+                pass
+
+        """
+        if handler_func:
+            cls.handler_registrar.register(event, handler_func)
+            return
+
+        def register(fn):
+            cls.handler_registrar.register(event, fn)
+
+        return register
 
     @classmethod
     def class_method(cls, f):
