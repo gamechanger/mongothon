@@ -334,7 +334,7 @@ class TestModel(TestCase):
         tracker = self.call_tracker(handler=handler, collection=self.mock_collection)
         self.Car.on('before_save', handler)
         self.car.save()
-        self.assertEquals([call.handler(self.car), call.collection.save(self.car)], tracker.mock_calls)
+        self.assertEquals([call.handler(self.car, self.car), call.collection.save(self.car)], tracker.mock_calls)
 
     def test_after_save_event(self):
         handler = Mock()
@@ -349,7 +349,7 @@ class TestModel(TestCase):
         tracker = self.call_tracker(handler=handler, validate=car_schema.validate)
         self.Car.on('before_validate', handler)
         self.car.validate()
-        self.assertEquals([call.handler(self.car), call.validate(self.car)], tracker.mock_calls)
+        self.assertEquals([call.handler(self.car, self.car), call.validate(self.car)], tracker.mock_calls)
 
     def test_after_validate_event(self):
         handler = Mock()
@@ -357,7 +357,7 @@ class TestModel(TestCase):
         tracker = self.call_tracker(handler=handler, validate=car_schema.validate)
         self.Car.on('after_validate', handler)
         self.car.validate()
-        self.assertEquals([call.validate(self.car), call.handler(self.car)], tracker.mock_calls)
+        self.assertEquals([call.validate(self.car), call.handler(self.car, self.car)], tracker.mock_calls)
 
 
     def test_class_method_registration(self):

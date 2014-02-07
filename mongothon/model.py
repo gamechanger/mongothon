@@ -72,9 +72,9 @@ class Model(Document):
         self._do_validate(self._create_working())
 
     def _do_validate(self, document):
-        self.handler_registrar.apply('before_validate', document)
+        self.handler_registrar.apply('before_validate', self, document)
         self.schema.validate(document)
-        self.handler_registrar.apply('after_validate', document)
+        self.handler_registrar.apply('after_validate', self, document)
 
     def apply_defaults(self):
         """Apply schema defaults to this document."""
@@ -86,7 +86,7 @@ class Model(Document):
         self._do_validate(working)
 
         # Apply before save middleware
-        self.handler_registrar.apply('before_save', working)
+        self.handler_registrar.apply('before_save', self, working)
 
         # Attempt to save
         self.collection.save(working, *args, **kwargs)
