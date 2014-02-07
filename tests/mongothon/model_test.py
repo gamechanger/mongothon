@@ -359,6 +359,12 @@ class TestModel(TestCase):
         self.car.validate()
         self.assertEquals([call.validate(self.car), call.handler(self.car, self.car)], tracker.mock_calls)
 
+    def test_after_init_event(self):
+        handler = Mock()
+        self.Car.on('after_init', handler)
+        car = self.Car()
+        handler.assert_called_once_with(car)
+
     def test_emit_custom_event(self):
         handler = Mock()
         self.Car.on('fruit_explosion', handler)

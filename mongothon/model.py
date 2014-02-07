@@ -32,6 +32,7 @@ class Model(Document):
     def __init__(self, inital_doc=None, initial_state=NEW):
         self._state = initial_state
         super(Model, self).__init__(inital_doc)
+        self.emit('after_init')
 
     def _create_working(self):
         working = deepcopy(self)
