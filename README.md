@@ -47,7 +47,7 @@ car.save()
 
 Create a new document:
 ```python
-car = new Car({
+car = Car({
     "make":     "Ford",
     "model":    "F-150",
     "color":    "red"
@@ -413,7 +413,7 @@ Every Mongothon model emits the following events as part of its lifecycle:
 | `'will_update'` | All arguments provided to `update_instance()`. | Emitted just before an `update` is performed for the given model instance. |
 | `'did_update'` | All arguments provided to `update_instance()`. | Emitted just after an `update` is performed for the given model instance. |
 | `'will_remove'` | All arguments provided to `remove()`. | Emitted just before an `remove` is performed for the given model instance. |
-| `'did_remove'` | All arguments provided to `reomve()`. | Emitted just after an `remove` is performed for the given model instance. |
+| `'did_remove'` | All arguments provided to `remove()`. | Emitted just after an `remove` is performed for the given model instance. |
 
 
 ##### Working copy event arguments
