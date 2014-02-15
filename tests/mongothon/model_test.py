@@ -1,4 +1,5 @@
 from mongothon import create_model
+from pickle import dumps, loads
 from unittest import TestCase
 from mock import Mock, ANY, call
 from mongothon import Document, Schema, NotFoundException, Array
@@ -55,6 +56,11 @@ doc = {
     "options": ['heated seats', 'leather steering wheel']
 }
 
+# This has to live here so pickle can find it.
+mock_collection = Mock()
+mock_collection.name = "pickleable"
+Pickleable = create_model(Mock(), mock_collection)
+
 
 class TestModel(TestCase):
 
@@ -68,6 +74,14 @@ class TestModel(TestCase):
         self.assertEquals(is_new, model.is_new())
         self.assertEquals(is_persisted, model.is_persisted())
         self.assertEquals(is_deleted, model.is_deleted())
+
+    def test_class_module_is_that_of_caller(self):
+        self.assertEqual(self.Car.__module__, 'tests.mongothon.model_test')
+
+    def test_class_is_pickleable(self):
+        pickled = dumps(Pickleable)
+        unpickled = loads(pickled)
+        self.assertEqual(unpickled, Pickleable)
 
     def test_class_name_defaults_to_camelcased_collection_name(self):
         mock_collection = Mock()

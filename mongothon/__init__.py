@@ -1,3 +1,4 @@
+import inspect
 from inflection import camelize
 from document import Document
 from model import Model, NotFoundException
@@ -19,7 +20,12 @@ def create_model(schema, collection, class_name=None):
     """
     if not class_name:
         class_name = camelize(str(collection.name))
-    return type(
-        class_name,
-        (Model,),
-        dict(schema=schema, collection=collection))
+
+    model_class = type(class_name,
+                       (Model,),
+                       dict(schema=schema, collection=collection))
+
+    frm = inspect.stack()[1]
+    model_class.__module__ = inspect.getmodule(frm[0]).__name__
+
+    return model_class
