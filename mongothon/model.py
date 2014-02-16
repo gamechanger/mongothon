@@ -160,6 +160,7 @@ class Model(Document):
     def reload(self):
         """Reloads the current model's data from the underlying
         database record, updating it in-place."""
+        self.emit('will_reload')
         self.populate(self.collection.find_one(self.__class__._id_spec(self['_id'])))
 
     @classmethod
