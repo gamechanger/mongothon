@@ -405,6 +405,15 @@ class TestModel(TestCase):
         self.car.reload()
         handler.assert_called_once_with(self.car)
 
+    def test_did_reload_event(self):
+        handler = Mock()
+        self.car['_id'] = ObjectId()
+        self.Car.on('did_reload', handler)
+        doc = {'make': 'Peugeot', 'model': '405'}
+        self.mock_collection.find_one.return_value = doc
+        self.car.reload()
+        handler.assert_called_once_with(self.car)
+
     def test_did_find_event_not_fire_for_simple_init(self):
         handler = Mock()
         self.Car.on('did_find', handler)

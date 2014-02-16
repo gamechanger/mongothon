@@ -162,6 +162,7 @@ class Model(Document):
         database record, updating it in-place."""
         self.emit('will_reload')
         self.populate(self.collection.find_one(self.__class__._id_spec(self['_id'])))
+        self.emit('did_reload')
 
     @classmethod
     def on(cls, event, handler_func=None):
