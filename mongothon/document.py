@@ -1,37 +1,54 @@
+def wrap(value):
+    if isinstance(value, dict):
+        return Document(value)
+    elif isinstance(value, list):
+        return DocumentList(value)
+    else:
+        return value
+
 class Document(dict):
     def __init__(self, initial=None):
         if initial:
-            self.populate(initial)
+            self.update(initial)
 
-    def _populate(self, from_dict, seen):
-        if id(from_dict) in seen:
-            raise ValueError("Circular reference detected in dict used to populate Mongothon document")
-        seen.add(id(from_dict))
+    def __setitem__(self, key, value):
+        super(Document, self).__setitem__(key, wrap(value))
 
-        def create_doc(value):
-            doc = Document()
-            doc._populate(value, seen)
-            return doc
+    def update(self, other=None, **kwargs):
+        if other:
+            for key in other:
+                self[key] = other[key]
 
+        if kwargs:
+            for key, in kwargs:
+                self[key] = kwargs[key]
+
+    def setdefault(self, key, default):
+        return super(Document, self).setdefault(key, wrap(default))
+
+    def populate(self, other):
+        """Like update, but clears the contents first."""
         self.clear()
-        for key, value in from_dict.iteritems():
-            if isinstance(value, dict):
-                self[key] = create_doc(value)
-
-            elif isinstance(value, list):
-                self[key] = []
-                for item in value:
-                    if isinstance(item, dict):
-                        self[key].append(create_doc(item))
-                    else:
-                        self[key].append(item)
-
-            else:
-                self[key] = value
-
-    def populate(self, from_dict):
-        """Populates this document from the given dict."""
-        seen = set()
-        self._populate(from_dict, seen)
+        self.update(other)
 
 
+class DocumentList(list):
+    def __init__(self, initial=None):
+        if initial:
+            self.extend(initial)
+
+    def __setslice__(self, i, j, sequence):
+        super(DocumentList, self).__setslice__(i, j, [wrap(value) for value in sequence])
+
+    def __setitem__(self, index, value):
+        super(DocumentList, self).__setitem__(index, wrap(value))
+
+    def extend(self, other):
+        if other:
+            super(DocumentList, self).extend([wrap(value) for value in other])
+
+    def append(self, item):
+        super(DocumentList, self).append(wrap(item))
+
+    def insert(self, i, item):
+        super(DocumentList, self).insert(i, wrap(item))
