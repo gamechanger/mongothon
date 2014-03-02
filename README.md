@@ -480,6 +480,64 @@ BlogPost.remove_all_handlers()
 ```
 
 
+### Change Tracking
+
+It's useful often to know which fields on a Model have changed, for example when determining if some secondary process needs to be initiated as a result of that change.
+
+Mongothon allows you easily inspect which fields and list items have been added / changed / removed at all parts of your Model object graph.
+
+#### Changing field values
+```python
+
+blog_post = BlogPost.find_by_id(id)
+blog_post['author']     # => 'Bob Smith'
+
+# Change a field value
+blog_post['author'] = 'John Davies'
+
+# `changed` returns a dict of changed fields and their current values
+blog_post.changed       # => {'author': 'John Davies'}
+
+# `changes` returns a dict of changed fields and their previous / current values as a tuple
+blog_post.changes       # => {'author': ('Bob Smith', 'John Smith')}
+
+# Because non-empty dicts evaluate to True, `changed` can be used in `if` statements
+if blog_post.changed:
+    print "Blog post changed!"
+```
+
+#### Adding a new field
+
+```python
+
+# Add a new field
+'views' in blog_post    # => False
+blog_post['views'] = 12
+
+# `added` returns a dict of added fields and their values
+blog_post.added         # => {'views': 12}
+
+```
+
+#### Deleting a field
+```python
+# Delete a field
+del blog_post['title']
+
+# `deleted` returns a dict of fields which have been deleted and their values
+blog_post.deleted       # => {'title': 'How to get ahead in software engineering'}
+```
+
+#### Saving and Reloading
+Saving and reloading resets the tracked changes.
+```python
+blog_post = BlogPost.find_by_id(id)
+blog_post['author'] = 'Dave Jones'
+blog_post.changed           # => {'author': 'Dave Jones'}
+blog_post.save()
+blog_post.changed           # => {}
+```
+
 ### Model State
 
 Mongothon models provide a few handy methods which let you determine the document's current persistence state:
