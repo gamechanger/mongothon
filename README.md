@@ -453,6 +453,32 @@ def log_load(post, loaded_time):
     logging.debug('Loaded post {} at {}'.format(post['_id'], loaded_time))
 ```
 
+#### Removing event handlers
+
+Sometimes it is desirable to be able to remove event handlers from a Model (e.g. for testing purposes). Models expose a few methods to make this easy:
+
+```python
+BlogPost.on('did_save', log_save)
+BlogPost.on('did_save', inc_save_count)
+BlogPost.on('did_find', log_find)
+
+# Inspect what handlers are registered for a given event
+BlogPost.handlers('did_save')  # => [<function log_save>, <function inc_save_count>]
+
+# Remove a given handler
+BlogPost.remove_handler('did_save', log_save)
+
+# Remove all handlers registered against a given event
+BlogPost.remove_all_handlers('did_save')
+
+# Remove all handlers registered against a given list of events
+BlogPost.remove_all_handlers('did_save', 'did_find')
+
+# Remove all handlers registered all events
+BlogPost.remove_all_handlers()
+
+```
+
 
 ### Model State
 
