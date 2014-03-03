@@ -69,11 +69,6 @@ class Model(Document):
         """Returns true if the model instance was deleted from the database."""
         return self._state == Model.DELETED
 
-    def emit(self, event, *args, **kwargs):
-        """Emits an event call to all handler functions registered against
-        this model's class and the given event type."""
-        self.handler_registrar.apply(event, self, *args, **kwargs)
-
     def validate(self):
         """Validates this model against the schema with which is was constructed.
         Throws a ValidationException if the document is found to be invalid."""
@@ -189,6 +184,14 @@ class Model(Document):
             cls.handler_registrar.register(event, fn)
 
         return register
+
+    def emit(self, event, *args, **kwargs):
+        """
+        Emits an event call to all handler functions registered against
+        this model's class and the given event type.
+        """
+        self.handler_registrar.apply(event, self, *args, **kwargs)
+
 
     @classmethod
     def class_method(cls, f):
