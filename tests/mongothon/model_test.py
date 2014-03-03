@@ -70,6 +70,9 @@ class TestModel(TestCase):
         self.Car = create_model(car_schema, self.mock_collection)
         self.car = self.Car(doc)
 
+    def tearDown(self):
+        self.Car.remove_all_handlers()
+
     def assert_predicates(self, model, is_new=False, is_persisted=False, is_deleted=False):
         self.assertEquals(is_new, model.is_new())
         self.assertEquals(is_persisted, model.is_persisted())
@@ -435,6 +438,25 @@ class TestModel(TestCase):
         self.Car.on('fruit_explosion', handler)
         self.car.emit('fruit_explosion', 'apples', other_fruit='oranges')
         handler.assert_called_once_with(self.car, 'apples', other_fruit='oranges')
+
+    def test_remove_handler(self):
+        handler = Mock()
+        self.Car.on('did_init', handler)
+        self.Car.remove_handler('did_init', handler)
+        self.Car()
+        self.assertEquals(0, handler.call_count)
+
+    def test_remove_all_handlers(self):
+        handler = Mock()
+        self.Car.on('did_init', handler)
+        self.Car.remove_all_handlers()
+        self.Car()
+        self.assertEquals(0, handler.call_count)
+
+    def test_handlers(self):
+        handler = Mock()
+        self.Car.on('did_init', handler)
+        self.assertEquals([handler], self.Car.handlers('did_init'))
 
     def test_class_method_registration(self):
         response = Mock()
