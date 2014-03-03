@@ -192,6 +192,27 @@ class Model(Document):
         """
         self.handler_registrar.apply(event, self, *args, **kwargs)
 
+    @classmethod
+    def remove_handler(self, event, handler_func):
+        """
+        Deregisters the given handler function from the given event on this Model.
+        When the given event is next emitted, the given function will not be called.
+        """
+        self.handler_registrar.deregister(event, handler_func)
+
+    @classmethod
+    def remove_all_handlers(self, *events):
+        """
+        Deregisters all handler functions, or those registered against the given event(s).
+        """
+        self.handler_registrar.deregister_all(*events)
+
+    @classmethod
+    def handlers(self, event):
+        """
+        Returns all handlers registered against the given event.
+        """
+        return self.handler_registrar.handlers(event)
 
     @classmethod
     def class_method(cls, f):
