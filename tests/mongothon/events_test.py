@@ -53,3 +53,54 @@ class TestEventHandlerRegistrar(unittest.TestCase):
         self.registrar.apply('save', document)
         handler.assert_called_once_with(document)
 
+    def test_handler_not_called_after_deregistration(self):
+        handler = Mock()
+        document = Mock()
+        arg = Mock()
+        kwarg = Mock()
+        self.registrar.register('save', handler)
+        self.registrar.deregister('save', handler)
+        self.registrar.apply('save', document, arg, kwarg=kwarg)
+        self.assertEquals(0, handler.call_count)
+
+    def test_deregister_when_not_registered(self):
+        handler = Mock()
+        self.registrar.register('save', handler)
+        self.registrar.deregister('save', handler)
+        self.registrar.deregister('save', handler)
+        self.registrar.deregister('bogus', handler)
+
+    def test_deregister_all(self):
+        handler1, handler2 = Mock(), Mock()
+        document = Mock()
+        arg = Mock()
+        kwarg = Mock()
+        self.registrar.register('save', handler1)
+        self.registrar.register('save', handler2)
+        self.registrar.deregister_all()
+        self.registrar.apply('save', document, arg, kwarg=kwarg)
+        self.assertEquals(0, handler1.call_count)
+        self.assertEquals(0, handler2.call_count)
+
+    def test_deregister_all_with_event_type(self):
+        handler1, handler2 = Mock(), Mock()
+        document = Mock()
+        arg = Mock()
+        kwarg = Mock()
+        self.registrar.register('save', handler1)
+        self.registrar.register('save', handler2)
+        self.registrar.deregister_all('reload')
+        self.registrar.apply('save', document, arg, kwarg=kwarg)
+        self.assertEquals(1, handler1.call_count)
+        self.assertEquals(1, handler2.call_count)
+        self.registrar.deregister_all('other', 'save')
+        self.assertEquals(1, handler1.call_count)
+        self.assertEquals(1, handler2.call_count)
+
+    def test_handlers(self):
+        handler1, handler2 = Mock(), Mock()
+        self.registrar.register('save', handler1)
+        self.registrar.register('save', handler2)
+        self.assertEquals([handler1, handler2], self.registrar.handlers('save'))
+        self.assertEquals([], self.registrar.handlers('other'))
+
