@@ -553,7 +553,7 @@ assert post.is_persisted()
 post.remove()
 assert not post.is_new()
 assert not post.is_persisted()
-assert port.is_deleted()
+assert post.is_deleted()
 ```
 
 # Developing and Contributing
