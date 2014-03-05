@@ -150,6 +150,13 @@ class TestModel(TestCase):
         self.car.save()
         self.assert_predicates(self.car, is_persisted=True)
 
+    def test_save_resets_change_tracking(self):
+        self.car['trim']['ac'] = True
+        self.car['make'] = 'Rover'
+        self.car.save()
+        self.assertFalse(self.car['trim'].changed)
+        self.assertFalse(self.car.changed)
+
     def test_remove(self):
         oid = ObjectId()
         self.car['_id'] = oid
@@ -328,6 +335,17 @@ class TestModel(TestCase):
         self.Car.on('did_save', handler)
         self.car.save()
         self.assertEquals([call.collection.save(self.car), call.handler(self.car)], tracker.mock_calls)
+
+    def test_changes_available_to_did_save_event_handler(self):
+        inner = Mock()
+        def handler(car):
+            self.assertTrue(car.changed)
+            inner()
+
+        self.Car.on('did_save', handler)
+        self.car['make'] = 'Rover'
+        self.car.save()
+        inner.assert_called_once_with()
 
     def test_will_validate_event(self):
         handler = Mock()

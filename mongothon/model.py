@@ -117,7 +117,7 @@ class Model(Document):
 
     def __getattribute__(self, name):
         if name == 'update':
-            return lambda *args, **kwargs: dict.update(self, *args, **kwargs)
+            return lambda *args, **kwargs: super(Model, self).update(*args, **kwargs)
         return super(Model, self).__getattribute__(name)
 
     def remove(self, *args, **kwargs):
