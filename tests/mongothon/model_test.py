@@ -476,6 +476,13 @@ class TestModel(TestCase):
         self.Car.on('did_init', handler)
         self.assertEquals([handler], self.Car.handlers('did_init'))
 
+    def test_different_classes_managed_their_own_handlers(self):
+        CarA = create_model(car_schema, Mock())
+        CarB = create_model(car_schema, Mock())
+        handler = Mock()
+        CarA.on('did_save', handler)
+        self.assertEquals([], CarB.handlers('did_save'))
+
     def test_class_method_registration(self):
         response = Mock()
 
