@@ -234,6 +234,25 @@ class TestDocument(unittest.TestCase):
         self.assertFalse(codeced.changed)
         self.assertFalse(codeced.deleted)
 
+    def test_to_dict(self):
+        doc = Document({
+            'a': 'b',
+            'c': 'd',
+            'e': [
+                {'f': 'g'},
+                {'h': 'i'}
+            ]
+        })
+        output = doc.to_dict()
+        self.assertEquals(doc, output)
+        self.assertIsInstance(output, dict)
+        self.assertIsInstance(output['e'], list)
+        self.assertIsInstance(output['e'][0], dict)
+        self.assertNotIsInstance(output, Document)
+        self.assertNotIsInstance(output['e'], DocumentList)
+        self.assertNotIsInstance(output['e'][0], Document)
+
+
 
 class TestDocumentList(unittest.TestCase):
     def test_equals_list(self):

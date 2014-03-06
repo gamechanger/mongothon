@@ -9,6 +9,19 @@ def wrap(value):
     else:
         return value
 
+
+def unwrap(value):
+    """
+    Unwraps the given Document or DocumentList as applicable.
+    """
+    if isinstance(value, Document):
+        return value.to_dict()
+    elif isinstance(value, DocumentList):
+        return value.to_list()
+    else:
+        return value
+
+
 class ChangeTracker(object):
     def __init__(self, instance):
         self._instance = instance
@@ -130,7 +143,6 @@ class Document(dict):
             self._change_tracker = ChangeTracker(self)
             return self._change_tracker
 
-
     def reset_changes(self):
         self._tracker.reset_changes()
 
@@ -143,6 +155,22 @@ class Document(dict):
         for value in self.values():
             if isinstance(value, Document) or isinstance(value, DocumentList):
                 value.reset_all_changes()
+
+    @property
+    def changed(self):
+        return self._tracker.changed
+
+    @property
+    def changes(self):
+        return self._tracker.changes
+
+    @property
+    def added(self):
+        return self._tracker.added
+
+    @property
+    def deleted(self):
+        return self._tracker.deleted
 
     def __setitem__(self, key, value):
         if key in self:
@@ -173,22 +201,13 @@ class Document(dict):
         self.clear()
         self.update(other)
 
-    @property
-    def changed(self):
-        return self._tracker.changed
-
-    @property
-    def changes(self):
-        return self._tracker.changes
-
-    @property
-    def added(self):
-        return self._tracker.added
-
-    @property
-    def deleted(self):
-        return self._tracker.deleted
-
+    def to_dict(self):
+        """
+        Returns the contents of the Document as a raw dict. Also recurses
+        into child Documents and DocumentLists converting those to dicts
+        and lists respectively.
+        """
+        return {key: unwrap(value) for key, value in self.iteritems()}
 
 
 class DocumentList(list):
@@ -225,3 +244,10 @@ class DocumentList(list):
     def pop(self, *args):
         return super(DocumentList, self).pop(*args)
 
+    def to_list(self):
+        """
+        Returns the contents of the DocumentList as a raw list. Also recurses
+        into child Documents and DocumentLists converting those to dicts
+        and lists respectively.
+        """
+        return [unwrap(value) for value in self]
