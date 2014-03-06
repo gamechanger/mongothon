@@ -1,4 +1,5 @@
 from mongothon.document import Document, DocumentList
+import pickle
 import unittest
 
 
@@ -217,6 +218,21 @@ class TestDocument(unittest.TestCase):
         self.assertEquals({}, doc.changed)
         self.assertEquals({}, doc['e'][0].changed)
         self.assertEquals({}, doc.deleted)
+
+    def test_pickleable(self):
+        doc = Document({
+            'a': 'b',
+            'c': 'd',
+            'e': [
+                {'f': 'g'},
+                {'h': 'i'}
+            ]
+        })
+        codeced = pickle.loads(pickle.dumps(doc))
+        self.assertEquals(doc, codeced)
+        self.assertFalse(codeced.added)
+        self.assertFalse(codeced.changed)
+        self.assertFalse(codeced.deleted)
 
 
 class TestDocumentList(unittest.TestCase):

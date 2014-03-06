@@ -118,10 +118,18 @@ class Document(dict):
     """
 
     def __init__(self, initial=None):
-        self._tracker = ChangeTracker(self)
         if initial:
             self.update(initial)
         self.reset_changes()
+
+    @property
+    def _tracker(self):
+        try:
+            return self._change_tracker
+        except AttributeError:
+            self._change_tracker = ChangeTracker(self)
+            return self._change_tracker
+
 
     def reset_changes(self):
         self._tracker.reset_changes()
