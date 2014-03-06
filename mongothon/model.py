@@ -79,9 +79,9 @@ class Model(Document):
         self._do_validate(self._create_working())
 
     def _do_validate(self, document):
-        self.emit('will_validate', document)
+        self._emit('will_validate', document)
         self.schema.validate(document)
-        self.emit('did_validate', document)
+        self._emit('did_validate', document)
 
     def apply_defaults(self):
         """Apply schema defaults to this document."""
@@ -94,13 +94,13 @@ class Model(Document):
         working = self._create_working()
         self._do_validate(working)
 
-        self.emit('will_save', working)
+        self._emit('will_save', working)
 
         # Attempt to save
         self.collection.save(working, *args, **kwargs)
         self._state = Model.PERSISTED
 
-        self.emit('did_save')
+        self._emit('did_save', working)
 
         # On successful completion, update from the working copy
         self.populate(working)
@@ -189,12 +189,20 @@ class Model(Document):
 
         return register
 
+    def _emit(self, event, document, *args, **kwargs):
+        """
+        Inner version of emit which passes the given document as the
+        primary argument to handler functions.
+        """
+        self.handler_registrar().apply(event, document, *args, **kwargs)
+
+
     def emit(self, event, *args, **kwargs):
         """
         Emits an event call to all handler functions registered against
         this model's class and the given event type.
         """
-        self.handler_registrar().apply(event, self, *args, **kwargs)
+        self._emit(event, self, *args, **kwargs)
 
     @classmethod
     def remove_handler(self, event, handler_func):

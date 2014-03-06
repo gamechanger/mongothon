@@ -404,11 +404,11 @@ Every Mongothon model emits the following events as part of its lifecycle:
 | ----- | --------------- | ----------- |
 | `'did_init'` | None | Emitted whenever a new model object instance is initialized. |
 | `'did_find'` | None | Emitted when a model object is instantiated as the result of database lookup. Fires after `'did_init'`. |
-| `'will_validate`' | `working` - the working copy of the `Model` instance. | Emitted just before a model is validated against it's schema. |
-| `'did_validate`' | `working` - the working copy of the `Model` instance. | Emitted just after a model is validated against it's schema. |
+| `'will_validate`' | None | Emitted just before a model is validated against it's schema. |
+| `'did_validate`' | None | Emitted just after a model is validated against it's schema. |
 | `'will_apply_defaults'` | None | Emitted just before defaults (from the associated schema) are applied to the `Model` instance .|
 | `'did_apply_defaults'` | None | Emitted just after defaults (from the associated schema) are applied to the `Model` instance .|
-| `'will_save'` | `working` - the working copy of the `Model` instance. | Emitted just before a model is saved to the database. Fires _after_ validation (and it's associated events). |
+| `'will_save'` | None | Emitted just before a model is saved to the database. Fires _after_ validation (and it's associated events). |
 | `'did_save'` | None | Emitted just after a model is saved to the database. |
 | `'will_update'` | All arguments provided to `update_instance()`. | Emitted just before an `update` is performed for the given model instance. |
 | `'did_update'` | All arguments provided to `update_instance()`. | Emitted just after an `update` is performed for the given model instance. |
