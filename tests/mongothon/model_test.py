@@ -2,7 +2,7 @@ from mongothon import create_model
 from pickle import dumps, loads
 from unittest import TestCase
 from mock import Mock, ANY, call
-from mongothon import Document, Schema, NotFoundException, Array
+from mongothon import Document, Schema, NotFoundException, InvalidIDException, Array
 from mongothon.validators import one_of
 from bson import ObjectId
 from copy import deepcopy
@@ -241,13 +241,11 @@ class TestModel(TestCase):
         self.assert_predicates(loaded_car, is_persisted=True)
         self.mock_collection.find_one.assert_called_with({'_id': 33})
 
-    def test_find_by_id_handles_oid_as_string(self):
+    def test_find_by_id_fails_on_oid_as_string(self):
         self.mock_collection.find_one.return_value = doc
         oid = ObjectId()
-        loaded_car = self.Car.find_by_id(str(oid))
-        self.assertEquals(doc, loaded_car)
-        self.assert_predicates(loaded_car, is_persisted=True)
-        self.mock_collection.find_one.assert_called_with({'_id': oid})
+        with self.assertRaises(InvalidIDException):
+            loaded_car = self.Car.find_by_id(str(oid))
 
     def test_find_by_id_missing_record(self):
         """Test that find_by_id throws a NotFoundException if the requested record does not exist"""
@@ -268,7 +266,7 @@ class TestModel(TestCase):
         updated_doc['make'] = 'Volvo'
         self.mock_collection.find_one.side_effect = [doc, updated_doc]
         oid = ObjectId()
-        car = self.Car.find_by_id(str(oid))
+        car = self.Car.find_by_id(oid)
         car['_id'] = oid
         car.reload()
         self.assertEquals(updated_doc, car)

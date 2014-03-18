@@ -4,11 +4,12 @@ from copy import deepcopy
 from bson import ObjectId
 from .document import Document
 from .queries import ScopeBuilder
-from .exceptions import NotFoundException
+from .exceptions import NotFoundException, InvalidIDException
 from .events import EventHandlerRegistrar
 
 
 OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
+INTIDEXPR = re.compile(r"^\d{,20}$")
 
 
 class Model(Document):
@@ -47,12 +48,9 @@ class Model(Document):
 
     @classmethod
     def _ensure_object_id(cls, id):
-        """Checks whether the given id is an ObjectId instance, and if not wraps it."""
-        if isinstance(id, ObjectId):
-            return id
-
-        if isinstance(id, basestring) and OBJECTIDEXPR.match(id):
-            return ObjectId(id)
+        """Checks whether the given id is an ObjectId instance, and if not fails loudly."""
+        if isinstance(id, basestring) and (OBJECTIDEXPR.match(id) or INTIDEXPR.match(id)):
+            raise InvalidIDException("{} passed as a string".format(id))
 
         return id
 

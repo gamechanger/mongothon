@@ -1,7 +1,7 @@
 import inspect
 from inflection import camelize
 from document import Document
-from model import Model, NotFoundException
+from model import Model, NotFoundException, InvalidIDException
 from schema import Schema
 from schemer import Mixed, ValidationException, Array
 
