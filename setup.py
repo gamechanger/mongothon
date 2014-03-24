@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="Mongothon",
-    version="0.7.6",
+    version="0.7.7",
     author="Tom Leach",
     author_email="tom@gc.io",
     description="A MongoDB object-document mapping layer for Python",
