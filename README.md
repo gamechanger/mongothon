@@ -342,6 +342,12 @@ gardening_posts = posts.tagged('gardening')
 print "{} of these are about gardening".format(gardening_posts.count())
 ```
 
+There is also a generic `where` scope provided out-of-the-box which allows custom scopes to be combined with arbitrary query conditions:
+```python
+num_food_posts_by_bob = BlogPost.author("bob").where({'category': 'food'}).count()
+```
+
+
 ### Events
 
 Mongothon Models emit events at various points in the lifecycle of a model instance. You can register one or more handler functions for a given event against the model class. These functions are then invoked at the point a model instance emits the event.

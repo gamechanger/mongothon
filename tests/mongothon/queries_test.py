@@ -1,7 +1,9 @@
 from mongothon.queries import ScopeBuilder
+from mongothon.scopes import where
 from unittest import TestCase
 from mock import Mock, call
 from .fake import FakeCursor
+
 
 class TestScopeBuilder(TestCase):
     def test_bad_scope(self):
@@ -89,6 +91,22 @@ class TestScopeBuilder(TestCase):
         bldr = bldr.scope_a().scope_b()
         self.assertEquals({"thing": {"$elemMatch": {'somefield': 1,
                                                     'someotherfield': 10}}},
+                          bldr.query)
+
+    def test_queries_combined_with_where_scope(self):
+        mock_model = Mock()
+
+        def scope_a():
+            return {"thing": {"$elemMatch": {'somefield': 1}}}
+
+        def scope_b():
+            return {"thing": {"$elemMatch": {'someotherfield': 10}}}
+
+        bldr = ScopeBuilder(mock_model, [scope_a, scope_b, where])
+        bldr = bldr.scope_a().scope_b().where({'a': 'b'})
+        self.assertEquals({"thing": {"$elemMatch": {'somefield': 1,
+                                                    'someotherfield': 10}},
+                           'a': 'b'},
                           bldr.query)
 
     def test_queries_with_lists_are_deep_merged_with_chained_scopes(self):
