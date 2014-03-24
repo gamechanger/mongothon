@@ -2,7 +2,9 @@ def wrap(value):
     """
     Wraps the given value in a Document or DocumentList as applicable.
     """
-    if isinstance(value, dict):
+    if isinstance(value, Document) or isinstance(value, DocumentList):
+        return value
+    elif isinstance(value, dict):
         return Document(value)
     elif isinstance(value, list):
         return DocumentList(value)
@@ -197,9 +199,9 @@ class Document(dict):
 
     def populate(self, other):
         """Like update, but clears the contents first."""
-        self.reset_changes()
         self.clear()
         self.update(other)
+        self.reset_all_changes()
 
     def to_dict(self):
         """

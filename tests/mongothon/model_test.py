@@ -340,10 +340,27 @@ class TestModel(TestCase):
         inner = Mock()
         def handler(car):
             self.assertTrue(car.changed)
+            self.assertIn('ac', car['trim'].changed)
             inner()
 
         self.Car.on('did_save', handler)
         self.car['make'] = 'Rover'
+        self.car['trim']['ac'] = True
+        self.car.save()
+        inner.assert_called_once_with()
+
+    def test_changes_available_to_will_validate_event_handler(self):
+        inner = Mock()
+        def handler(car):
+            self.assertTrue(car.changed)
+            self.assertIn('ac', car['trim'].changed)
+            self.assertEquals({'diameter': (22, 23)}, car['wheels'][0].changes)
+            inner()
+
+        self.Car.on('will_validate', handler)
+        self.car['make'] = 'Rover'
+        self.car['trim']['ac'] = True
+        self.car['wheels'][0]['diameter'] = 23
         self.car.save()
         inner.assert_called_once_with()
 
