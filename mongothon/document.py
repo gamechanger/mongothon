@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 def wrap(value):
     """
     Wraps the given value in a Document or DocumentList as applicable.
@@ -37,6 +39,12 @@ class ChangeTracker(object):
         self._added = []
         self._previous = {}
         self._deleted = {}
+
+    def update(self, other):
+        self.reset_changes()
+        self._added.extend(other._added)
+        self._previous.update(other._previous)
+        self._deleted.update(other._deleted)
 
     def note_change(self, key, value):
         """
@@ -157,6 +165,11 @@ class Document(dict):
         for value in self.values():
             if isinstance(value, Document) or isinstance(value, DocumentList):
                 value.reset_all_changes()
+
+    def __deepcopy__(self, memo):
+        clone = Document(deepcopy(dict(self)))
+        clone._tracker.update(self._tracker)
+        return clone
 
     @property
     def changed(self):
