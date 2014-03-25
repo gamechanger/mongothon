@@ -167,7 +167,7 @@ class Document(dict):
                 value.reset_all_changes()
 
     def __deepcopy__(self, memo):
-        clone = Document(deepcopy(dict(self)))
+        clone = type(self)(deepcopy(dict(self), memo))
         clone._tracker.update(self._tracker)
         return clone
 

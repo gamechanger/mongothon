@@ -359,6 +359,7 @@ class TestModel(TestCase):
             self.assertIn('ac', car['trim'].changed)
             self.assertEqual({}, car['trim'].added)
             self.assertEquals({'diameter': (22, 23)}, car['wheels'][0].changes)
+            self.assertIsInstance(car, self.Car)
             inner()
 
         self.Car.on('will_validate', handler)
