@@ -1,6 +1,6 @@
 import re
 import types
-from copy import deepcopy
+from copy import deepcopy, copy
 from bson import ObjectId
 from .document import Document
 from .queries import ScopeBuilder
@@ -241,7 +241,7 @@ class Model(Document):
     def scope(cls, f):
         """Decorator which can dynamically attach a query scope to the model."""
         if not hasattr(cls, "scopes"):
-            cls.scopes = STANDARD_SCOPES
+            cls.scopes = copy(STANDARD_SCOPES)
 
         cls.scopes.append(f)
 

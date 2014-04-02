@@ -4,6 +4,7 @@ from unittest import TestCase
 from mock import Mock, ANY, call
 from mongothon import Document, Schema, NotFoundException, Array
 from mongothon.validators import one_of
+from mongothon.scopes import STANDARD_SCOPES
 from bson import ObjectId
 from copy import deepcopy
 from .fake import FakeCursor
@@ -548,4 +549,19 @@ class TestModel(TestCase):
         self.assertEqual(2, cars.count())
         for car in cars:
             self.assertIsInstance(car, self.Car)
+
+    def test_models_maintain_their_own_scope_lists(self):
+        CarA = create_model(car_schema, Mock())
+        CarB = create_model(car_schema, Mock())
+
+        def scope_a():
+            return {}
+
+        def scope_b():
+            return {}
+
+        CarA.scope(scope_a)
+        CarB.scope(scope_b)
+        self.assertEquals(STANDARD_SCOPES + [scope_a], CarA.scopes)
+        self.assertEquals(STANDARD_SCOPES + [scope_b], CarB.scopes)
 
