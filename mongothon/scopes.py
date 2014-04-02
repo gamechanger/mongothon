@@ -8,3 +8,6 @@ def where(query):
     to combine arbritary query elements with other scopes.
     """
     return query
+
+
+STANDARD_SCOPES = [where]
