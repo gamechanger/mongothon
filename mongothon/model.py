@@ -237,6 +237,7 @@ class Model(Document):
     def instance_method(cls, f):
         """Decorator which dynamically binds instance methods to the model."""
         setattr(cls, f.__name__, f)
+        return f
 
     @classmethod
     def scope(cls, f):

@@ -540,6 +540,18 @@ class TestModel(TestCase):
         car = self.Car(doc)
         self.assertEquals(response, car.add_option("sunroof"))
 
+    def test_instance_method_registration_with_other_decorators(self):
+        before = Mock()
+
+        @before
+        @self.Car.instance_method
+        def add_option(car, option):
+            pass
+
+        before.assert_called_once_with(ANY)
+        self.assertTrue(callable(before.call_args[0][0]))
+
+
     def test_scope_query(self):
         @self.Car.scope
         def with_ac(available=True):
