@@ -475,15 +475,15 @@ class TestModel(TestCase):
         stub.assert_called_once_with(car)
 
     def test_on_decorator_with_other_decorators(self):
-        before = Mock()
+        outer_decorator = Mock()
 
-        @before
+        @outer_decorator
         @self.Car.on('did_init')
         def func(*args, **kwargs):
             pass
 
-        before.assert_called_once_with(ANY)
-        self.assertTrue(callable(before.call_args[0][0]))
+        outer_decorator.assert_called_once_with(ANY)
+        self.assertTrue(callable(outer_decorator.call_args[0][0]))
 
     def test_emit_custom_event(self):
         handler = Mock()
@@ -541,15 +541,15 @@ class TestModel(TestCase):
         self.assertEquals(response, car.add_option("sunroof"))
 
     def test_instance_method_registration_with_other_decorators(self):
-        before = Mock()
+        outer_decorator = Mock()
 
-        @before
+        @outer_decorator
         @self.Car.instance_method
         def add_option(car, option):
             pass
 
-        before.assert_called_once_with(ANY)
-        self.assertTrue(callable(before.call_args[0][0]))
+        outer_decorator.assert_called_once_with(ANY)
+        self.assertTrue(callable(outer_decorator.call_args[0][0]))
 
 
     def test_scope_query(self):
