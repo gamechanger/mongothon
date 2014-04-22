@@ -187,6 +187,7 @@ class Model(Document):
 
         def register(fn):
             cls.handler_registrar().register(event, fn)
+            return fn
 
         return register
 

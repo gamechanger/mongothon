@@ -474,6 +474,17 @@ class TestModel(TestCase):
         car = self.Car()
         stub.assert_called_once_with(car)
 
+    def test_on_decorator_with_other_decorators(self):
+        before = Mock()
+
+        @before
+        @self.Car.on('did_init')
+        def func(*args, **kwargs):
+            pass
+
+        before.assert_called_once_with(ANY)
+        self.assertTrue(callable(before.call_args[0][0]))
+
     def test_emit_custom_event(self):
         handler = Mock()
         self.Car.on('fruit_explosion', handler)
