@@ -528,6 +528,17 @@ class TestModel(TestCase):
 
         self.assertEquals(response, self.Car.find_by_make("Peugeot"))
 
+    def test_class_method_registration_with_other_decorators(self):
+        outer_decorator = Mock()
+
+        @outer_decorator
+        @self.Car.class_method
+        def find_by_make(Car, make):
+            pass
+
+        outer_decorator.assert_called_once_with(ANY)
+        self.assertTrue(callable(outer_decorator.call_args[0][0]))
+
     def test_instance_method_registration(self):
         response = Mock()
 
