@@ -584,6 +584,17 @@ class TestModel(TestCase):
         for car in cars:
             self.assertIsInstance(car, self.Car)
 
+    def test_scope_with_other_decorator(self):
+        outer_decorator = Mock()
+
+        @outer_decorator
+        @self.Car.scope
+        def with_ac(available=True):
+            return {"trim.ac": available}
+
+        outer_decorator.assert_called_once_with(ANY)
+        self.assertTrue(callable(outer_decorator.call_args[0][0]))
+
     def test_models_maintain_their_own_scope_lists(self):
         CarA = create_model(car_schema, Mock())
         CarB = create_model(car_schema, Mock())

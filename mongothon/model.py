@@ -253,6 +253,7 @@ class Model(Document):
             return getattr(bldr, f.__name__)(*args, **kwargs)
 
         setattr(cls, f.__name__, types.MethodType(create_builder, cls))
+        return f
 
 
 class CursorWrapper(object):
