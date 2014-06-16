@@ -75,7 +75,7 @@ class Model(Document):
         return self._state == Model.DELETED
 
     def validate(self):
-        """Validates this model against the schema with which is was constructed.
+        """Validates this model against the schema with which it was constructed.
         Throws a ValidationException if the document is found to be invalid."""
         self._do_validate(self._create_working())
 
@@ -147,9 +147,9 @@ class Model(Document):
     @classmethod
     def find_by_id(cls, id):
         """
-        Finds a single document by it's ID. Throws a
+        Finds a single document by its ID. Throws a
         NotFoundException if the document does not exist (the
-        assumption being if you're got an id you should be
+        assumption being if you've got an id you should be
         pretty certain the thing exists)
         """
         obj = cls.find_one(cls._id_spec(id))
