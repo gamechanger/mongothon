@@ -112,7 +112,7 @@ class Model(Document):
 
     def update_instance(self, *args, **kwargs):
         self.emit('will_update', *args, **kwargs)
-        result = self.__class__.update({'_id': self['_id']}, *args, **kwargs)
+        result = type(self).update({'_id': self['_id']}, *args, **kwargs)
         self.emit('did_update', *args, **kwargs)
         return result
 
@@ -161,7 +161,7 @@ class Model(Document):
         """Reloads the current model's data from the underlying
         database record, updating it in-place."""
         self.emit('will_reload')
-        self.populate(self.collection.find_one(self.__class__._id_spec(self['_id'])))
+        self.populate(self.collection.find_one(type(self)._id_spec(self['_id'])))
         self.emit('did_reload')
 
     @classmethod
