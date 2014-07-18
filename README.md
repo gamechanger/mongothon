@@ -113,9 +113,9 @@ order = Order.find({'total_due': {'$gte': '10'}})  # returns a cursor containing
 ```
 
 #### Updating documents
-Mongothon two mechanisms to run updates against documents.
+Mongothon provides two mechanisms to run updates against documents.
 
-##### `Model.update` (static method)
+##### `Model.update` (class method)
 The class method version of `update` is essentially a proxy for the underlying Pymongo collection object's `update` method and can be
 called as such.
 ```python
@@ -211,6 +211,26 @@ order = Order.find_by_id(some_id)
 order.add_line_item("iPad Mini", 300)
 order.save()
 ```
+
+### Static methods
+
+#### Custom static methods
+To provide a consistent API, Mongothon models let you define custom static methods:
+```python
+@BlogPost.static_method
+def format_commenter_name(commenter):
+    return commenter["name"].title()
+
+@BlogPost.instance_method
+def get_commenter_names(self):
+    return [self.format_commenter_name(commenter)
+            for commenter in self["commenters"]
+            if not commenter.get("hellbanned")]
+
+blog_post = BlogPost.find_by_id(some_id)
+print blog_post.get_commenter_names()
+```
+
 
 ### "Scopes" (beta)
 
