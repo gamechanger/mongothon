@@ -231,7 +231,7 @@ class Model(Document):
     @classmethod
     def class_method(cls, f):
         """Decorator which dynamically binds class methods to the model for later use."""
-        setattr(cls, f.__name__, types.MethodType(f, cls))
+        setattr(cls, f.__name__, classmethod(f))
         return f
 
     @classmethod
@@ -252,7 +252,7 @@ class Model(Document):
             bldr = ScopeBuilder(cls, cls.scopes)
             return getattr(bldr, f.__name__)(*args, **kwargs)
 
-        setattr(cls, f.__name__, types.MethodType(create_builder, cls))
+        setattr(cls, f.__name__, classmethod(create_builder))
         return f
 
 
