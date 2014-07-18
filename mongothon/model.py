@@ -229,6 +229,12 @@ class Model(Document):
         return self.handler_registrar().handlers(event)
 
     @classmethod
+    def static_method(cls, f):
+        """Decorator which dynamically binds static methods to the model for later use."""
+        setattr(cls, f.__name__, staticmethod(f))
+        return f
+
+    @classmethod
     def class_method(cls, f):
         """Decorator which dynamically binds class methods to the model for later use."""
         setattr(cls, f.__name__, classmethod(f))
