@@ -517,6 +517,25 @@ class TestModel(TestCase):
         CarA.on('did_save', handler)
         self.assertEquals([], CarB.handlers('did_save'))
 
+    def test_static_method_registration(self):
+        @self.Car.static_method
+        def format_make(make):
+            self.assertEquals("mercedez-benz", make)
+            return make.title()
+
+        self.assertEquals("Mercedez-Benz", self.Car.format_make("mercedez-benz"))
+
+    def test_static_method_registration_with_other_decorators(self):
+        outer_decorator = Mock()
+
+        @outer_decorator
+        @self.Car.static_method
+        def format_make(make):
+            pass
+
+        outer_decorator.assert_called_once_with(ANY)
+        self.assertTrue(callable(outer_decorator.call_args[0][0]))
+
     def test_class_method_registration(self):
         response = Mock()
 
