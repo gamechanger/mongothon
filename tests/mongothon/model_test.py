@@ -205,6 +205,11 @@ class TestModel(TestCase):
         self.assert_predicates(loaded_car, is_persisted=True)
         self.mock_collection.find_one.assert_called_with({'make': 'Peugeot'})
 
+    def test_find_one_missing_record(self):
+        self.mock_collection.find_one.return_value = None
+        loaded_car = self.Car.find_one({'make': 'Peugeot'})
+        self.assertIsNone(loaded_car)
+
     def test_find(self):
         cursor = FakeCursor([{'make': 'Peugeot', 'model': '405'}, {'make': 'Peugeot', 'model': '205'}])
         self.mock_collection.find.return_value = cursor

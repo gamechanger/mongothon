@@ -137,8 +137,10 @@ class Model(Document):
 
     @classmethod
     def find_one(cls, *args, **kwargs):
-        return cls(cls.collection.find_one(*args, **kwargs),
-                   initial_state=Model.PERSISTED)
+        obj = cls.collection.find_one(*args, **kwargs)
+        if obj:
+            return cls(obj, initial_state=Model.PERSISTED)
+        return None
 
     @classmethod
     def find(cls, *args, **kwargs):
