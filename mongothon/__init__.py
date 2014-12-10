@@ -6,6 +6,16 @@ from schema import Schema
 from schemer import Mixed, ValidationException, Array
 
 
+def _module_name_from_previous_frame(num_frames_back):
+    """
+    Returns the module name associated with a frame `num_frames_back` in the
+    call stack. This function adds 1 to account for itself, so `num_frames_back`
+    should be given relative to the caller.
+    """
+    frm = inspect.stack()[num_frames_back + 1]
+    return inspect.getmodule(frm[0]).__name__
+
+
 def create_model(schema, collection, class_name=None):
     """
     Main entry point to creating a new mongothon model. Both
@@ -25,8 +35,9 @@ def create_model(schema, collection, class_name=None):
                        (Model,),
                        dict(schema=schema, _collection_factory=staticmethod(lambda: collection)))
 
-    frm = inspect.stack()[1]
-    model_class.__module__ = inspect.getmodule(frm[0]).__name__
+    # Since we are dynamically creating this class here, we modify __module__ on the
+    # created class to point back to the module from which `create_model` was called
+    model_class.__module__ = _module_name_from_previous_frame(1)
 
     return model_class
 
@@ -41,7 +52,8 @@ def create_model_offline(schema, collection_factory, class_name):
                        (Model,),
                        dict(schema=schema, _collection_factory=staticmethod(collection_factory)))
 
-    frm = inspect.stack()[1]
-    model_class.__module__ = inspect.getmodule(frm[0]).__name__
+    # Since we are dynamically creating this class here, we modify __module__ on the
+    # created class to point back to the module from which `create_model_offline` was called
+    model_class.__module__ = _module_name_from_previous_frame(1)
 
     return model_class
