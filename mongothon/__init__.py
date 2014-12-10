@@ -23,7 +23,23 @@ def create_model(schema, collection, class_name=None):
 
     model_class = type(class_name,
                        (Model,),
-                       dict(schema=schema, collection=collection))
+                       dict(schema=schema, _collection_factory=staticmethod(lambda: collection)))
+
+    frm = inspect.stack()[1]
+    model_class.__module__ = inspect.getmodule(frm[0]).__name__
+
+    return model_class
+
+
+def create_model_offline(schema, collection_factory, class_name):
+    """
+    Entry point for creating a new Mongothon model without instantiating
+    a database connection. The collection is instead provided through a closure
+    that is resolved upon the model's first database access.
+    """
+    model_class = type(class_name,
+                       (Model,),
+                       dict(schema=schema, _collection_factory=staticmethod(collection_factory)))
 
     frm = inspect.stack()[1]
     model_class.__module__ = inspect.getmodule(frm[0]).__name__

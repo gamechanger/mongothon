@@ -12,6 +12,23 @@ from .scopes import STANDARD_SCOPES
 OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
 
 
+class ModelMeta(type):
+    """
+    To support lazy collection loading without breaking the existing API, we have
+    three requirements:
+    1. `collection` is accessible as a class property of Model
+    2. `collection` is accessible as an instance property of Model
+    3. The collection can be dynamically resolved at runtime rather than compile time
+
+    We use this metaclass to provide #1 while hooking into a class method (which
+    provides #3) under the hood.
+    """
+    def __getattribute__(self, name):
+        if name == 'collection':
+            return self.get_collection()
+        return type.__getattribute__(self, name)
+
+
 class Model(Document):
     """
     Model base class on which all specific user model classes subclass.
@@ -22,6 +39,8 @@ class Model(Document):
     subclass is correctly constructed with the appropriate collection
     and schema dependencies.
     """
+
+    __metaclass__ = ModelMeta
 
     # Valid lifecycle states which a given Model instance may occupy.
     NEW = 1
@@ -90,6 +109,12 @@ class Model(Document):
         self.schema.apply_defaults(self)
         self.emit('did_apply_defaults')
 
+    @classmethod
+    def get_collection(cls):
+        if not hasattr(cls, '_collection'):
+            cls._collection = cls._collection_factory()
+        return cls._collection
+
     def save(self, *args, **kwargs):
         # Create a working copy of ourselves and validate it
         working = self._create_working()
@@ -121,8 +146,16 @@ class Model(Document):
         return cls.collection.update(*args, **kwargs)
 
     def __getattribute__(self, name):
+        # This ensures that we can resolve model.update (instance method) to
+        # dict.update on the underlying document given that the Model.update
+        # (class method) proxies to the PyMongo collection.update instance method.
         if name == 'update':
             return lambda *args, **kwargs: super(Model, self).update(*args, **kwargs)
+
+        # This branch allows `collection` to be dynamically resolved and accessed
+        # as an instance property, see the docstring for ModelMeta for more
+        elif name == 'collection':
+            return self.get_collection()
         return super(Model, self).__getattribute__(name)
 
     def remove(self, *args, **kwargs):

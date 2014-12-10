@@ -1,7 +1,7 @@
-from mongothon import create_model
+from mongothon import create_model, create_model_offline
 from pickle import dumps, loads
 from unittest import TestCase
-from mock import Mock, ANY, call
+from mock import Mock, ANY, call, NonCallableMock
 from mongothon import Document, Schema, NotFoundException, Array
 from mongothon.validators import one_of
 from mongothon.scopes import STANDARD_SCOPES
@@ -69,7 +69,9 @@ class TestModel(TestCase):
         self.mock_collection = Mock()
         self.mock_collection.name = "car"
         self.Car = create_model(car_schema, self.mock_collection)
+        self.CarOffline = create_model_offline(car_schema, lambda: self.mock_collection, 'Car')
         self.car = self.Car(doc)
+        self.car_offline = self.CarOffline(doc)
 
     def tearDown(self):
         self.Car.remove_all_handlers()
@@ -634,3 +636,18 @@ class TestModel(TestCase):
         self.assertEquals(STANDARD_SCOPES + [scope_a], CarA.scopes)
         self.assertEquals(STANDARD_SCOPES + [scope_b], CarB.scopes)
 
+    def test_find_one_from_offline_model(self):
+        self.mock_collection.find_one.return_value = doc
+        loaded_car = self.CarOffline.find_one({'make': 'Peugeot'})
+        self.assertEquals(doc, loaded_car)
+        self.assert_predicates(loaded_car, is_persisted=True)
+        self.mock_collection.find_one.assert_called_with({'make': 'Peugeot'})
+
+    def test_update_instance_from_offline_model(self):
+        oid = ObjectId()
+        self.car_offline['_id'] = oid
+        self.car_offline.save()
+        self.car_offline.update_instance({'model': '106'})
+        self.assert_predicates(self.car_offline, is_persisted=True)
+        self.mock_collection.update.assert_called_with(
+            {'_id': oid}, {'model': '106'})
