@@ -26,7 +26,7 @@ class ModelMeta(type):
     def __getattribute__(self, name):
         if name == 'collection':
             return self.get_collection()
-        return type.__getattribute__(self, name)
+        return super(ModelMeta, self).__getattribute__(name)
 
 
 class Model(Document):
