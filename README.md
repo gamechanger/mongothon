@@ -94,6 +94,19 @@ Order = create_model(order_schema, db['orders'])
 ```
 The second argument which must be provided to `create_model` is the PyMongo collection object associated with the underlying MongoDB collection to be associated with the model.
 
+#### "Offline" model creation
+
+In certain scenarios, you may not have the database connection available to you at the time you want to define the model class, e.g. you want to connect to the database just before you want to perform data access.
+
+For these scenarios, Mongothon supplies a `create_model_offline` method which allows you to provide a lambda which, when called, returns the Collection object for use by the model. You must also pass the `class_name` as a mandatory argument so that Mongothon may infer the name of the model type without an active database connection. Example:
+
+```python
+Order = create_model_offline(order_schema, lambda: connect_to_db()['orders'], 'Orders')
+...
+# database connection is dynamically created just before this lookup
+order = Order.find_by_id(some_id)
+```
+
 ### Class methods
 Model classes provide a number of class methods which can be used to interact with the underlying collection as a whole.
 
