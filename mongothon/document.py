@@ -204,8 +204,8 @@ class Document(dict):
                 self[key] = other[key]
 
         if kwargs:
-            for key, in kwargs:
-                self[key] = kwargs[key]
+            for key, value in kwargs.iteritems():
+                self[key] = value
 
     def setdefault(self, key, default):
         return super(Document, self).setdefault(key, wrap(default))
