@@ -24,6 +24,11 @@ class TestDocument(unittest.TestCase):
         doc.update({'a': 'b', 'c': 'd'})
         self.assertEquals({'a': 'b', 'c': 'd'}, doc)
 
+    def test_update_with_multi_character_kwargs(self):
+        doc = Document()
+        doc.update({'a': 'b'}, cc='d')
+        self.assertEquals({'a': 'b', 'cc': 'd'}, doc)
+
     def test_setdefault(self):
         doc = Document({'a': 'b'})
         self.assertEquals(doc.setdefault('c', {'d': 'e'}), {'d': 'e'})
