@@ -111,6 +111,18 @@ class TestModel(TestCase):
         self.car['make'] = 'volvo'
         self.assertEquals('volvo', self.car['make'])
 
+    def test_constructor_with_kwargs(self):
+        car = self.Car(doc, _id='new_car_id')
+        self.assertEquals('new_car_id', car['_id'])
+
+    def test_constructor_with_kwargs_and_initial_state(self):
+        handler = Mock()
+        self.Car.on('did_find', handler)
+        car = self.Car(doc, initial_state=self.Car.PERSISTED, _id='new_car_id')
+        self.assertEquals('new_car_id', car['_id'])
+        self.assertEquals(self.Car.PERSISTED, car._state)
+        handler.assert_called_once_with(car)
+
     def test_instantiate(self):
         self.assert_predicates(self.car, is_new=True)
 

@@ -140,9 +140,11 @@ class Document(dict):
     Subclass of dict which adds some useful functionality around change tracking.
     """
 
-    def __init__(self, initial=None):
+    def __init__(self, initial=None, **kwargs):
         if initial:
-            self.update(initial)
+            self.update(initial, **kwargs)
+        elif kwargs:
+            self.update(**kwargs)
         self.reset_changes()
 
     @property

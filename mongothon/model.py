@@ -47,9 +47,9 @@ class Model(Document):
     PERSISTED = 2
     DELETED = 3
 
-    def __init__(self, inital_doc=None, initial_state=NEW):
+    def __init__(self, inital_doc=None, initial_state=NEW, **kwargs):
         self._state = initial_state
-        super(Model, self).__init__(inital_doc)
+        super(Model, self).__init__(inital_doc, **kwargs)
         self.emit('did_init')
         if initial_state == self.PERSISTED:
             self.emit('did_find')

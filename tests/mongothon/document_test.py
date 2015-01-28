@@ -13,6 +13,22 @@ class TestDocument(unittest.TestCase):
         doc = Document()
         self.assertEquals({}, doc)
 
+    def test_init_with_kwargs(self):
+        doc = Document({'a': 'b', 'c': 'd'}, e='f', g='h')
+        self.assertEquals({'a': 'b', 'c': 'd', 'e': 'f', 'g': 'h'}, doc)
+
+    def test_init_with_kwargs_only(self):
+        doc = Document(a='b', c='d')
+        self.assertEquals({'a': 'b', 'c': 'd'}, doc)
+
+    def test_init_with_initial_keyword(self):
+        doc = Document(initial={'a': 'b', 'c': 'd'})
+        self.assertEquals(doc, {'a': 'b', 'c': 'd'})
+
+    def test_init_with_initial_keyword_and_kwargs(self):
+        doc = Document(initial={'a': 'b', 'c': 'd'}, e='f', g='h')
+        self.assertEquals(doc, {'a': 'b', 'c': 'd', 'e': 'f', 'g': 'h'})
+
     def test_set_get(self):
         doc = Document({'a': 'b'})
         self.assertEquals('b', doc['a'])
