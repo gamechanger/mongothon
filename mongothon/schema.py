@@ -1,5 +1,27 @@
 from bson.objectid import ObjectId
+import pymongo
 import schemer
+
+
+class IndexSpec(object):
+    def __init__(self, name, key_spec, **kwargs):
+        self.name = name
+        self.key_spec = key_spec
+        self.kwargs = kwargs
+
+    def apply_to(self, collection):
+        collection.create_index(self.key_spec, name=self.name, **self.kwargs)
+
+    def validate(self):
+        if not self.name:
+            raise ValueError("Must specify a non-nil name for every index")
+        if not self.key_spec:
+            raise ValueError("Must specify the actual index for {}".format(self.name))
+        for name, index_type in self.key_spec:
+            if index_type not in {pymongo.ASCENDING, pymongo.DESCENDING, pymongo.HASHED}:
+                raise ValueError('Unsupported Index Type {} for {}'.format(index_type, self.name))
+        return self
+
 
 
 class Schema(schemer.Schema):
@@ -14,12 +36,4 @@ class Schema(schemer.Schema):
         if '_id' not in self._doc_spec:
             self._doc_spec['_id'] = {"type": ObjectId}
 
-        self.indexes = kwargs.get('indexes', [])
-        self._validate_indexes()
-
-    def _validate_indexes(self):
-        for index in self.indexes:
-            if 'name' not in index:
-                raise KeyError('name')
-            if 'key' not in index:
-                raise KeyError('key')
+        self.indexes = [i.validate() for i in kwargs.get('indexes', [])]

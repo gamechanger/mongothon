@@ -2,7 +2,7 @@ import inspect
 from inflection import camelize
 from document import Document
 from model import Model, NotFoundException
-from schema import Schema
+from schema import Schema, IndexSpec
 from schemer import Mixed, ValidationException, Array
 
 

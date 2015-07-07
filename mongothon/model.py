@@ -7,7 +7,7 @@ from .queries import ScopeBuilder
 from .exceptions import NotFoundException
 from .events import EventHandlerRegistrar
 from .scopes import STANDARD_SCOPES
-
+from .schema import IndexSpec
 
 OBJECTIDEXPR = re.compile(r"^[a-fA-F0-9]{24}$")
 
@@ -111,14 +111,12 @@ class Model(Document):
 
     @classmethod
     def apply_index(cls, index):
-        key = index['key']
-        kwargs = {k:v for k,v in index.iteritems() if k != 'key'}
-        cls._collection.create_index(key, **kwargs)
+        index.apply_to(cls.get_collection())
 
     @classmethod
     def apply_indexes(cls):
         for index in cls.schema.indexes:
-            cls.apply_index(index)
+            index.apply_to(cls.get_collection())
 
     @classmethod
     def _existing_indexes(cls):
@@ -130,23 +128,25 @@ class Model(Document):
         info = cls.get_collection().index_information()
         indexes = []
         for k, v in info.iteritems():
-            if k == '_id_':
+            if k == '_id_': # this is the primary key index, not interesting
                 continue
-            index = {'name': k,
-                     'key': v['key']}
-            if v.get('unique'):
-                index['unique'] = True
+            index = IndexSpec(k, v['key'])
+            for arg, val in v.iteritems():
+                if arg == 'key':
+                    continue
+                index.kwargs[arg] == val
+            index.validate()
             indexes.append(index)
         return indexes
 
     @classmethod
     def applied_indexes(cls):
-        return [i['name'] for i in cls._existing_indexes()]
+        return [i.name for i in cls._existing_indexes()]
 
     @classmethod
     def unapplied_indexes(cls):
-        existing_names = set([i['name'] for i in cls._existing_indexes()])
-        expected_names = [i['name'] for i in cls.schema.indexes]
+        existing_names = set([i.name for i in cls._existing_indexes()])
+        expected_names = [i.name for i in cls.schema.indexes]
         return [name for name in expected_names if name not in existing_names]
 
     @classmethod

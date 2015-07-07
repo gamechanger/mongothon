@@ -2,7 +2,7 @@ from mongothon import create_model, create_model_offline
 from pickle import dumps, loads
 from unittest import TestCase
 from mock import Mock, ANY, call, NonCallableMock
-from mongothon import Document, Schema, NotFoundException, Array
+from mongothon import Document, Schema, NotFoundException, Array, IndexSpec
 from mongothon.validators import one_of
 from mongothon.scopes import STANDARD_SCOPES
 from bson import ObjectId
@@ -23,7 +23,7 @@ car_schema = Schema({
     }))},
     "options":              {"type": Array(basestring)}
 },
-                    indexes=[{'name': 'make_1', 'key': [('make', 1)]}])
+                    indexes=[IndexSpec('make_1', [('make', 1)])])
 
 
 doc = {
