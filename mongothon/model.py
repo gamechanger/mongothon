@@ -141,7 +141,7 @@ class Model(Document):
 
     @classmethod
     def applied_indexes(cls):
-        return cls._existing_indexes()
+        return [i['name'] for i in cls._existing_indexes()]
 
     @classmethod
     def unapplied_indexes(cls):

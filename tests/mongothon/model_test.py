@@ -134,6 +134,7 @@ class TestModel(TestCase):
         self.mock_collection.create_index.assert_called_once_with([('make', 1)], name='make_1')
         self.mock_collection.index_information.return_value = {'make_1': {'key': [('make', 1)]}}
         self.assertEqual([], self.Car.unapplied_indexes())
+        self.assertEqual(['make_1'], self.Car.applied_indexes())
 
     def test_validation_of_valid_doc(self):
         self.car.validate()
