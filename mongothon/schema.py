@@ -29,11 +29,11 @@ class Schema(schemer.Schema):
 
     indexes = []
 
-    def __init__(self, doc_spec, **kwargs):
-        super(Schema, self).__init__(doc_spec, **{k:v for k,v in kwargs.iteritems() if k != 'indexes'})
+    def __init__(self, doc_spec, indexes=[], **kwargs):
+        super(Schema, self).__init__(doc_spec, **kwargs)
 
         # Every mongothon schema should expect an ID field.
         if '_id' not in self._doc_spec:
             self._doc_spec['_id'] = {"type": ObjectId}
 
-        self.indexes = [i.validate() for i in kwargs.get('indexes', [])]
+        self.indexes = [i.validate() for i in indexes]
