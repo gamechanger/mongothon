@@ -6,3 +6,7 @@ Mongothon.egg-info
 build
 dist
 env
+#*#
+*#
+.#*
+*~
