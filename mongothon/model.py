@@ -110,6 +110,46 @@ class Model(Document):
         self.emit('did_apply_defaults')
 
     @classmethod
+    def apply_index(cls, index):
+        key = index['key']
+        kwargs = {k:v for k,v in index.iteritems() if k != 'key'}
+        cls._collection.create_index(key, **kwargs)
+
+    @classmethod
+    def apply_indexes(cls):
+        for index in cls.schema.indexes:
+            cls.apply_index(index)
+
+    @classmethod
+    def _existing_indexes(cls):
+        """
+          >>> db.<col>.index_information()
+          {u'_id_': {u'key': [(u'_id', 1)]},
+           u'x_1': {u'unique': True, u'key': [(u'x', 1)]}}
+        """
+        info = cls.get_collection().index_information()
+        indexes = []
+        for k, v in info.iteritems():
+            if k == '_id_':
+                continue
+            index = {'name': k,
+                     'key': v['key']}
+            if v.get('unique'):
+                index['unique'] = True
+            indexes.append(index)
+        return indexes
+
+    @classmethod
+    def applied_indexes(cls):
+        return cls._existing_indexes()
+
+    @classmethod
+    def unapplied_indexes(cls):
+        existing_names = set([i['name'] for i in cls._existing_indexes()])
+        expected_names = [i['name'] for i in cls.schema.indexes]
+        return [name for name in expected_names if name not in existing_names]
+
+    @classmethod
     def get_collection(cls):
         if not hasattr(cls, '_collection'):
             cls._collection = cls._collection_factory()

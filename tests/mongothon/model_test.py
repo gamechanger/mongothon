@@ -22,7 +22,8 @@ car_schema = Schema({
         "diameter":         {"type": int}
     }))},
     "options":              {"type": Array(basestring)}
-})
+},
+                    indexes=[{'name': 'make_1', 'key': [('make', 1)]}])
 
 
 doc = {
@@ -68,6 +69,7 @@ class TestModel(TestCase):
     def setUp(self):
         self.mock_collection = Mock()
         self.mock_collection.name = "car"
+        self.mock_collection.index_information = Mock(return_value={})
         self.Car = create_model(car_schema, self.mock_collection)
         self.CarOffline = create_model_offline(car_schema, lambda: self.mock_collection, 'Car')
         self.car = self.Car(doc)
@@ -125,6 +127,13 @@ class TestModel(TestCase):
 
     def test_instantiate(self):
         self.assert_predicates(self.car, is_new=True)
+
+    def test_indexes(self):
+        self.assertEqual(['make_1'], self.Car.unapplied_indexes())
+        self.Car.apply_indexes()
+        self.mock_collection.create_index.assert_called_once_with([('make', 1)], name='make_1')
+        self.mock_collection.index_information.return_value = {'make_1': {'key': [('make', 1)]}}
+        self.assertEqual([], self.Car.unapplied_indexes())
 
     def test_validation_of_valid_doc(self):
         self.car.validate()
