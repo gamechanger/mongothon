@@ -6,4 +6,4 @@ class NotFoundException(Exception):
         self._id = id
 
     def __str__(self):
-        return "{} {} not found".format(self._collection.name, self._id)
+        return u"{} {} not found".format(self._collection.name, self._id)
