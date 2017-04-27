@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name="Mongothon",
-    version="0.7.20",
+    version="0.8.0",
     author="Tom Leach",
     author_email="tom@gc.io",
     description="A MongoDB object-document mapping layer for Python",
@@ -15,7 +15,7 @@ setuptools.setup(
                      "API for Python, loosely based on the awesome " +
                      "mongoose.js library.",
     install_requires=[
-        'pymongo>=2.5.0, <3.0.0', 'inflection==0.2.0', 'schemer>=0.2.0, <0.3.0'
+        'pymongo>=3.0.0, <4.0.0', 'inflection==0.2.0', 'schemer>=0.2.0, <0.3.0'
     ],
     tests_require=['mock', 'nose']
     )
