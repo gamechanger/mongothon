@@ -1,5 +1,5 @@
 import os
-from pymongo.connection import Connection
+from pymongo import MongoClient
 import unittest
 from mongothon import create_model
 from sample import blog_post_schema, valid_doc, expected_db_doc
@@ -10,7 +10,7 @@ port = int(os.environ.get("DB_PORT", 27017))
 
 
 def get_db(*args, **kwargs):
-    return Connection(host, port, *args, **kwargs).mongothon_test
+    return MongoClient(host, port, *args, **kwargs).mongothon_test
 
 blog_post_collection = get_db().blog_post
 BlogPost = create_model(blog_post_schema, blog_post_collection)
